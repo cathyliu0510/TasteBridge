@@ -1,0 +1,20 @@
+\section*{Background and Motivation}
+
+Friends, couples and book clubs often need to agree on one book, which is hard when tastes differ: for a fantasy fan and a thriller fan, a popular title may suit neither, while one person's top pick can leave the other uninterested. Existing apps support reading together, and StoryGraph already suggests books for buddy reads~\cite{storygraph}; our focus is how well shared recommendations serve both readers when we know little about their tastes.
+
+TasteBridge lets each reader pick five books they enjoyed, then proposes five ``bridge books,'' each with a short reason tied to each reader's favorites, on an interactive ``taste galaxy'' map built from the recommender's own book representations so users can explore the similarities behind the suggestions. The main challenge is recommending from this limited input without examples of what pairs agreed to read: we will test whether a hybrid recommender using reading histories and book metadata~\cite{kula2015} improves on simpler baselines and compare ways of balancing the two readers' preferences.
+
+\begin{table}[H]
+\centering\tablestyle
+\begin{tabularx}{\linewidth}{@{}L{5.3cm}L{6.1cm}Y@{}}
+\toprule
+\textbf{Stakeholder} & \textbf{What they need} & \textbf{How TasteBridge helps} \\
+\midrule
+\textbf{Pairs of readers} (friends, partners; primary) & A book both will finish and enjoy, chosen quickly & Five ranked bridge books with per-reader reasons; the map shows \emph{why} they overlap \\
+\textbf{Small book clubs} (3--5 people; stretch) & A fair pick that doesn't favor the loudest member & Same method for groups, with a least-satisfied-member check \\
+\textbf{Librarians / booksellers} (indirect) & Quick joint suggestions for customers shopping together & A shareable result link \\
+\textbf{Less-known authors} (affected party) & Not being buried by popularity bias & Popularity-debiased ranking and a diversity check \\
+\textbf{Course staff} & A substantive, testable, deployable system & Clear central challenge, baselines, full MLOps pipeline \\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,71 @@
+% ================================================================
+% preamble.tex: packages, page layout, headers/footers, spacing
+% ================================================================
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage[margin=0.5in,headheight=14pt,includeheadfoot]{geometry}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage[usenames,dvipsnames,svgnames]{xcolor}
+\usepackage{charter}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{booktabs,tabularx,array}
+\usepackage{xltabular}   % page-breakable tabularx (used for the long text tables)
+\setlength{\LTpre}{2pt}\setlength{\LTpost}{0pt}
+\usepackage{multicol}    % two-column reference list
+\usepackage{float}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{csquotes}
+\usepackage{xurl}
+\usepackage{makecell}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{titlesec}
+
+\newcommand{\theproject}{TasteBridge}
+\newcommand{\thecourse}{AC 215: MLOps \& LLMOps}
+\newcommand{\thedoc}{Project Proposal}
+
+% ---------- headers / footers ----------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\theproject}
+\fancyhead[C]{\thecourse}
+\fancyhead[R]{\thedoc}
+\fancyfoot[L]{\includegraphics[width=2.1cm]{images/H_SEAS_logo_1color.png}}
+\fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}
+\renewcommand\headrulewidth{0.4pt}
+\renewcommand\footrulewidth{0.4pt}
+
+% Page 1: footer only (the title block acts as the header)
+\fancypagestyle{firstpage}{%
+  \fancyhf{}%
+  \fancyfoot[L]{\includegraphics[width=2.1cm]{images/H_SEAS_logo_1color.png}}%
+  \fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}%
+  \renewcommand\headrulewidth{0pt}%
+  \renewcommand\footrulewidth{0.4pt}%
+}
+
+% ---------- compact spacing ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\titleformat{\section}{\large\bfseries}{}{0pt}{}
+\titleformat{\subsection}{\normalsize\bfseries}{}{0pt}{}
+\titlespacing*{\section}{0pt}{5pt plus 1pt minus 1pt}{2pt}
+\titlespacing*{\subsection}{0pt}{3pt plus 1pt}{1pt}
+\setlist{nosep, leftmargin=1.2em}
+\captionsetup{font=footnotesize, skip=2pt}
+\setlength{\textfloatsep}{5pt plus 1pt minus 1pt}
+\setlength{\floatsep}{4pt plus 1pt minus 1pt}
+\setlength{\intextsep}{4pt plus 1pt minus 1pt}
+\setlength{\bibsep}{1pt}
+\renewcommand{\bibfont}{\footnotesize}
+
+% ---------- shared table helpers ----------
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\tablestyle}{\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.02}}
+\newcommand{\runin}[1]{\textbf{#1}\enspace}
