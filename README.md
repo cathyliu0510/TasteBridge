@@ -2,7 +2,7 @@
 
 A book recommender for two readers. Each picks five favorites; TasteBridge suggests five shared reads with a reason for each person.
 
-[Frontend prototype](https://tastebridge-prototype.landenini.chatgpt.site/) · [MS1 project scope](https://tastebridge-prototype.landenini.chatgpt.site/project/)
+[Frontend prototype](https://tastebridge-prototype.landenini.chatgpt.site/) · [Final MS1 proposal and source](milestones/ms1/) · [Current work split and meeting notes](docs/team-status.md)
 
 The frontend demo uses 23 curated sample books. The data pipeline, trained recommender and backend are planned in the MS1 proposal.
 
@@ -27,7 +27,7 @@ The MVP is capped at **5,000 distinct works** and **500,000 training interaction
 
 ## Milestone 2
 
-The proposal calls for a one-command Docker pipeline, a work-level dataset tracked with DVC, baseline results and run logs, and an app skeleton.
+Due **October 20, 10pm ET**: a one-command Docker pipeline, a work-level dataset tracked with DVC, baseline results and run logs, and an app skeleton. The [official requirements](https://harvard-iacs.github.io/2026-AC215/milestone2/) specify a `milestone2` branch, its full commit hash on Canvas, and a 15-minute presentation with slides.
 
 ## Frontend
 

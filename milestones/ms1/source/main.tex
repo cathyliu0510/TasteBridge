@@ -1,0 +1,37 @@
+\documentclass[10pt, letterpaper]{article}
+\input{preamble}
+
+\begin{document}
+\thispagestyle{firstpage}
+
+% ---------- title block (compact; replaces \maketitle, no date) ----------
+\begin{center}
+  {\LARGE TasteBridge: Finding the Book Two Readers Will Both Love}\\[4pt]
+  {\small
+  \begin{tabular}{@{}ccccc@{}}
+    Jenny Zhu & Cathy Liu & Nikhil Babani & Anhad Ahluwalia & YiTong Li \\
+    \scriptsize\texttt{jennyzhu@g.harvard.edu} &
+    \scriptsize\texttt{cathyliu@g.harvard.edu} &
+    \scriptsize\texttt{nbabani@g.harvard.edu} &
+    \scriptsize\texttt{anhad\_ahluwalia@g.harvard.edu} &
+    \scriptsize\texttt{yitong\_li@g.harvard.edu}
+  \end{tabular}}
+\end{center}
+\vspace{-6pt}
+
+\input{sections/01_background}      % Background, motivation, stakeholders
+\input{sections/02_problem}         % Problem statement
+\input{sections/03_data}            % Data sources
+\input{sections/04_solution}        % Solution direction, compute, tech stack
+\input{sections/05_scope}           % Scope, objectives, learning emphasis, fun factor, minimum components
+\input{sections/07_evaluation}      % Evaluation
+\input{sections/06_mockup}          % Application mockup (placed here so the page breaks cleanly)
+\input{sections/08_risks}           % Limitations, risks and ethics
+\input{sections/09_milestones}      % Milestones
+
+\begin{multicols}{2}
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+\end{multicols}
+
+\end{document}
