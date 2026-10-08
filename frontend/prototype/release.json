@@ -1,0 +1,23 @@
+{
+  "preferred": "A",
+  "release": "20261008.1",
+  "routes": [
+    "/",
+    "/a/",
+    "/b/",
+    "/project/"
+  ],
+  "versions": [
+    {
+      "version": "A",
+      "release": "20261008.1",
+      "sha256": "34f7eb2e988533c9bdb89d5c23f99b355a00f00a64ac78f529fce5fce43018e3"
+    },
+    {
+      "version": "B",
+      "release": "20261008.1",
+      "sha256": "08d15d720b2b70474e2ac3826f28bb5d2c0553950c426c3d663bb8ad68b7892c"
+    }
+  ],
+  "project_sha256": "93563f88b675cceb6df8bf2c6f023a34dfaeca02e1b9f3cca4da3564db21b543"
+}
