@@ -1,4 +1,4 @@
-import {byId} from './engine.mjs?v=20261008.1';
+import {byId} from './engine.mjs?v=20261008.2';
 function validateSession(input){
  if(!input||!Array.isArray(input.a)||!Array.isArray(input.b))throw new Error('Provide a list of favorites for both readers.');
  for(const ids of [input.a,input.b])if(ids.length>5||new Set(ids).size!==ids.length||ids.some(id=>typeof id!=='string'||!byId(id)))throw new Error('Each reader can choose up to five different sample books.');

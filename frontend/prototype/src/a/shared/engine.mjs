@@ -1,4 +1,4 @@
-import { CATALOG, byId, TAGS, DEMO } from './catalog.mjs?v=20261008.1';
+import { CATALOG, byId, TAGS, DEMO } from './catalog.mjs?v=20261008.2';
 export { CATALOG, byId, TAGS, DEMO };
 const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
 const norm=a=>Math.sqrt(dot(a,a));

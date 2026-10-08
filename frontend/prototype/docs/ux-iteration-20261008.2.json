@@ -1,0 +1,270 @@
+{
+  "iteration": "20261008.2",
+  "product": "TasteBridge",
+  "surface": "Frontend prototype A",
+  "record_status": "Iteration decisions, reported browser checks, and remaining checks",
+  "evidence_basis": {
+    "source_snapshot": "20261008.1 code before this iteration, plus the saved final proposal",
+    "browser_checks": "Passed checks reported by the product lead; this reviewer did not independently repeat them",
+    "user_research": "No interviews or usability study were conducted. Reader personas remain task hypotheses, not validated user findings.",
+    "company_claims": "Roles describe review responsibilities. No company employment, affiliation, or endorsement is claimed."
+  },
+  "scope": {
+    "boundary": "Approved MS1 frontend prototype: two anonymous readers each select five favorites, then compare five bridge books and per-reader reasons.",
+    "project_page_scope_changes": false,
+    "new_project_commitments": false,
+    "state_limit": "Current-page interactions only; no new accounts, remote collaboration, persistence, or model-performance promises."
+  },
+  "roles": [
+    {
+      "agent": "root",
+      "role": "Product lead",
+      "responsibility": "Priorities, scope, final interaction decisions, and browser verification"
+    },
+    {
+      "agent": "product_research",
+      "role": "UX researcher",
+      "responsibility": "Reader-task hypotheses and comparison needs"
+    },
+    {
+      "agent": "visual_interaction",
+      "role": "Visual/interaction designer",
+      "responsibility": "Hierarchy, feedback, touch layout, and restrained motion"
+    },
+    {
+      "agent": "narrative_director",
+      "role": "Skeptical usability/accessibility reviewer",
+      "responsibility": "Ambiguity, state continuity, keyboard behavior, and accessibility limits"
+    }
+  ],
+  "reader_personas": [
+    {
+      "id": "missing_familiar_books",
+      "status": "Task hypothesis",
+      "situation": "A reader cannot find familiar titles in the sample catalogue.",
+      "task": "Understand the sample boundary and recover to available books.",
+      "hypothesis": "Clear sample context and search recovery may help the reader continue."
+    },
+    {
+      "id": "divergent_taste_partners",
+      "status": "Task hypothesis",
+      "situation": "Partners have different tastes and need to compare reasons and ranking modes.",
+      "task": "Compare candidates, express interest, and distinguish ranking from a shared choice.",
+      "hypothesis": "Keeping opinions on retained books may support continuous comparison."
+    },
+    {
+      "id": "time_poor_phone_sharing_pair",
+      "status": "Task hypothesis",
+      "situation": "Two readers with limited time take turns on one phone.",
+      "task": "Complete both sets of five, hand over the phone, and confirm a shared pick.",
+      "hypothesis": "Visible progress, explicit handoff, and measured shelf spacing may reduce backtracking."
+    }
+  ],
+  "source_observed_friction": [
+    {
+      "id": "optional_interest_conflicts_with_guard",
+      "baseline_source": [
+        "src/a/app.mjs:166-169",
+        "src/a/desk-decision.mjs:17-19"
+      ],
+      "observation": "The baseline said interest was optional while confirmation required two Interested votes.",
+      "interpretation": "The disabled confirmation button could be hard to understand.",
+      "decision": "Keep the explicit two-Interested guard and clarify that browsing can skip voting, but confirmation requires both readers."
+    },
+    {
+      "id": "ranking_resets_retained_book_opinions",
+      "baseline_source": [
+        "src/a/app.mjs:117",
+        "src/a/desk-decision.mjs:6-7"
+      ],
+      "observation": "The baseline cleared all votes and the shared choice when ranking changed.",
+      "interpretation": "Readers could need to repeat opinions on books still in the shortlist.",
+      "decision": "Retain votes by book ID and keep a valid shared choice. The helper intentionally mutates current state and copies retained vote containers so old nested references are not modified."
+    },
+    {
+      "id": "vote_button_arrows_navigate_candidates",
+      "baseline_source": [
+        "src/a/app.mjs:38"
+      ],
+      "observation": "The baseline candidate-arrow handler did not exclude vote buttons.",
+      "interpretation": "An arrow key could switch books during an interest interaction.",
+      "decision": "Arrow keys on vote buttons must not change candidates; retain explicit Previous/Next controls."
+    },
+    {
+      "id": "fixed_mobile_spacing",
+      "baseline_source": [
+        "src/a/style.css:41"
+      ],
+      "observation": "The baseline used a fixed 115px body reserve while the bottom shelf could expand to 70dvh.",
+      "interpretation": "Shelf expansion or viewport changes could cover content; this was a layout risk, not an observed user failure.",
+      "decision": "Use ResizeObserver to reserve the shelf's actual height, with additional body padding."
+    },
+    {
+      "id": "catalogue_and_ranking_language",
+      "baseline_source": [
+        "src/a/app.mjs:46",
+        "src/a/app.mjs:51-57",
+        "src/a/app.mjs:114",
+        "src/a/app.mjs:152"
+      ],
+      "observation": "The baseline used Both for the mixed genre category and ambiguous balance/average labels; the first recommendation was visually prominent.",
+      "interpretation": "Readers might confuse a category, recommendation order, and a shared decision. These remain hypotheses.",
+      "proposal": "Keep sample boundaries, ranking meaning, and shared-choice status explicit."
+    }
+  ],
+  "root_decisions": {
+    "confirmation_guard": "Confirmation requires both readers to choose Interested. Changing a vote away from Interested invalidates that shared choice.",
+    "interest_copy": "Browsing does not require voting; explicit shared confirmation does.",
+    "ranking_helper": "Intentionally mutate current state, retain votes for current book IDs, and copy retained vote containers to protect old nested references.",
+    "seed_edits": "Seed edits still clear votes and the shared choice.",
+    "keyboard": "Arrows on vote buttons do not change candidates.",
+    "mobile_spacing": "ResizeObserver supplies the bottom shelf's measured reserve."
+  },
+  "browser_checks": {
+    "status": "Passed as reported by the product lead",
+    "results": [
+      {
+        "id": "missing_title_recovery",
+        "result": "Recovered from a missing-title search to available sample books."
+      },
+      {
+        "id": "sample_replacement",
+        "result": "Cancelling preserved an existing one-book selection; explicit sample replacement also worked."
+      },
+      {
+        "id": "reader_labels",
+        "result": "Per-reader reasons and summary labels displayed correctly."
+      },
+      {
+        "id": "vote_arrow_right",
+        "result": "ArrowRight on a vote button left the candidate unchanged."
+      },
+      {
+        "id": "evidence_continuity",
+        "result": "Expanded evidence stayed open after voting."
+      },
+      {
+        "id": "explicit_confirmation",
+        "result": "The explicit two-Interested confirmation flow passed."
+      },
+      {
+        "id": "average_ranking_retention",
+        "result": "Switching to average ranking retained the same candidate's votes and shared choice."
+      },
+      {
+        "id": "seed_edit_invalidation",
+        "result": "Removing and re-adding a seed cleared votes and the shared choice."
+      },
+      {
+        "id": "mobile_layout",
+        "viewports_css_px": [
+          "390x844",
+          "320x720"
+        ],
+        "result": "Neither viewport had horizontal overflow.",
+        "measured_shelf_reserves_px": [
+          391,
+          351
+        ],
+        "additional_body_padding_px": 24
+      },
+      {
+        "id": "remove_target",
+        "viewport_width_css_px": 320,
+        "approximate_target_css_px": [
+          49.6,
+          80
+        ],
+        "result": "Measured the seed-removal target."
+      },
+      {
+        "id": "manual_share",
+        "result": "Manual share text included the current chosen book."
+      },
+      {
+        "id": "console",
+        "result": "No console errors were observed during these checks."
+      }
+    ]
+  },
+  "remaining_checks": [
+    {
+      "id": "complete_keyboard_flow",
+      "status": "Partially checked",
+      "checked": "ArrowRight on a vote button did not switch candidates. Previous/Next browsing and Escape returned focus to the matching result. Closing manual copy returned focus to the visible Share shortlist disclosure.",
+      "remaining": "ArrowLeft on all voting controls and the complete Tab/Enter/Space path were not exhaustively checked."
+    },
+    {
+      "id": "map_interaction",
+      "status": "Not checked",
+      "check": "Map drag, keyboard traversal, and focus visibility after pan or zoom."
+    },
+    {
+      "id": "zoom_and_software_keyboard",
+      "status": "Not checked",
+      "check": "Text zoom and an actual software keyboard. Viewport checks do not establish these results."
+    },
+    {
+      "id": "reduced_motion",
+      "status": "Not browser-emulated",
+      "check": "Verify content and feedback under actual prefers-reduced-motion browser emulation."
+    },
+    {
+      "id": "reader_understanding",
+      "status": "Not user-tested",
+      "check": "Whether readers understand sample boundaries, ranking labels, optional browsing, and shared confirmation. No usability outcome is claimed."
+    }
+  ],
+  "small_copy_proposals": {
+    "confirmation_help": "You can browse without voting. To confirm a shared pick, both readers need to choose Interested.",
+    "reader_handoff": "Your five are kept. Reader 2, your turn.",
+    "ranking_hint": "Changing the order keeps your interest in books that stay on the shortlist.",
+    "voice_intent": "Use concrete, relaxed language about both readers and the shared decision; avoid destiny, emotional measurement, or success-rate claims."
+  },
+  "reference_standards": [
+    {
+      "title": "Apple Human Interface Guidelines: Design principles",
+      "url": "https://developer.apple.com/design/human-interface-guidelines/design-principles",
+      "use": "Public design reference only; not user evidence, certification, or endorsement."
+    },
+    {
+      "title": "Apple Human Interface Guidelines: Feedback",
+      "url": "https://developer.apple.com/design/human-interface-guidelines/feedback",
+      "use": "Public feedback reference only; not user evidence, certification, or endorsement."
+    }
+  ],
+  "reference_access_note": "Both official links were opened; the text browser returned JavaScript-required page shells. No specific guideline text is quoted or treated as verified content here.",
+  "automated_checks": {
+    "status": "Passed",
+    "ranking_state_tests": {
+      "passed": 9,
+      "failed": 0,
+      "command": "node --test tools/verify-ranking.mjs"
+    },
+    "release_routes": [
+      "/",
+      "/a/",
+      "/b/",
+      "/project/"
+    ],
+    "release_validation": "Inline JavaScript syntax, metadata, embedded assets, and hosted navigation checks passed."
+  },
+  "motion_iteration": {
+    "purpose": "Show entry, direction, selection, and confirmation without continuous decoration.",
+    "implemented": [
+      "Single page and scroll entrances",
+      "Cover selection and shelf arrival feedback",
+      "Direction-aware Previous/Next book transitions",
+      "Retained-card motion when ranking changes",
+      "Disclosure and native dialog entrances",
+      "One-time explicit shared-choice feedback"
+    ],
+    "browser_checks": [
+      "Directional classes and computed reading-next/reading-previous animations matched the next and previous book.",
+      "Explicit confirmation activated reading-choice feedback.",
+      "Computed card transforms changed during sorting, while retained interests and the shared choice stayed attached to the same book."
+    ],
+    "reduced_motion": "CSS and JavaScript guard system reduced-motion and the existing reduce-motion class. Actual browser media emulation was not available in this check.",
+    "fallback": "Untriggered reveal nodes remain visible if the observer is absent."
+  }
+}

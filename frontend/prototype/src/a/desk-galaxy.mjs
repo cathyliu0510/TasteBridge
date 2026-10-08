@@ -1,5 +1,5 @@
-import {byId,profile,project} from './shared/engine.mjs?v=20261008.1';
-import {escape,svg} from './shared/ui.mjs?v=20261008.1';
+import {byId,profile,project} from './shared/engine.mjs?v=20261008.2';
+import {escape,svg} from './shared/ui.mjs?v=20261008.2';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const stableJitter=id=>[...id].reduce((sum,letter)=>sum+letter.charCodeAt(0),0);

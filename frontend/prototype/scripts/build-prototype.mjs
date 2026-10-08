@@ -17,7 +17,8 @@ for (const version of ['A', 'B']) {
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, html);
   if (version === 'A') writeFileSync(resolve(root, 'dist/index.html'), html);
-  releases.push({ version, release: '20261008.1', sha256: hash(html) });
+  const metadata = JSON.parse(/<script type="application\/json" id="prototype-metadata">([\s\S]*?)<\/script>/.exec(html)[1]);
+  releases.push({ version, release: metadata.sourceRelease, sha256: hash(html) });
 }
 let project = readFileSync(resolve(root, 'pages/project.html'), 'utf8');
 for (const [placeholder, file, mime] of [
@@ -29,5 +30,5 @@ for (const [placeholder, file, mime] of [
 ]) project = project.replaceAll(placeholder, `data:${mime};base64,${readFileSync(resolve(root, 'src/a', file)).toString('base64')}`);
 mkdirSync(resolve(root, 'dist/project'), { recursive: true });
 writeFileSync(resolve(root, 'dist/project/index.html'), project);
-writeFileSync(resolve(root, 'release.json'), JSON.stringify({ preferred: 'A', release: '20261008.1', routes: ['/', '/a/', '/b/', '/project/'], versions: releases, project_sha256: hash(project) }, null, 2) + '\n');
+writeFileSync(resolve(root, 'release.json'), JSON.stringify({ preferred: 'A', release: '20261008.2', routes: ['/', '/a/', '/b/', '/project/'], versions: releases, project_sha256: hash(project) }, null, 2) + '\n');
 console.log('Built A, B, and the project scope page from editable source.');

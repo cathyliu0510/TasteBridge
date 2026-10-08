@@ -15,6 +15,7 @@ Requires Node.js. No package installation is needed.
 ```sh
 node scripts/build-prototype.mjs
 node scripts/verify-release.mjs
+node --test tools/verify-ranking.mjs
 python3 -m http.server 4175 --bind 127.0.0.1 --directory dist
 ```
 
@@ -26,6 +27,14 @@ Keep full dataset downloads, credentials, personal information, and private team
 
 The shared Site is published separately by its owner. Merging this PR does not automatically deploy the Site or change the project scope.
 
-## Validation for release 20261008.1
+## Reading Desk iteration 20261008.2
 
-The four routes passed bundled JavaScript and metadata checks. Browser checks covered desktop/phone layout, milestone expansion, sample recommendations, and restoring favorites after visiting the project page. These checks verify frontend behavior; they do not measure recommendation quality or model performance.
+A now has a three-step reader handoff, recovery when a favorite is missing from the sample catalogue, equal-sized recommendation cards with separate reader overlap summaries, and core reasons before optional connection details. Ranking changes preserve responses and an explicitly confirmed choice for books that remain in the five. Editing favorites still clears the previous decision.
+
+Selection feedback, scroll reveals, book-detail transitions, and sorting motion support the current task. System reduced-motion preferences disable this motion. The phone shelf reserves its measured height instead of relying on fixed spacing.
+
+The task personas and review record are in docs/ux-iteration-20261008.2.json. They are design hypotheses; no interviews or usability study have been conducted. B remains at 20261008.1, and the MS1 project scope is unchanged.
+
+## Validation
+
+All four routes pass bundled JavaScript and metadata checks. Nine ranking-state tests cover retained opinions, removed candidates, and explicit confirmation. Browser checks cover missing-book recovery, sample replacement, separate reasons, keyboard-safe voting, retained interests after sorting, clearing decisions after favorite edits, manual shortlist sharing, and 320px/390px phone layouts. No console errors were observed. These checks verify frontend behavior; they do not measure recommendation quality or model performance.

@@ -1,24 +1,26 @@
-import {CATALOG,DEMO,byId,recommend,sessionFromURL,seedQuery} from './shared/engine.mjs?v=20261008.1';
-import {$,$$,escape,brand,svg,bookTile,bindDialog,toast,makeRecorder} from './shared/ui.mjs?v=20261008.1';
-import {DeskGalaxy} from './desk-galaxy.mjs?v=20261008.1';
-import {installBridge} from './shared/bridge.mjs?v=20261008.1';
-import {VOTE_OPTIONS,voteLabel,bothWilling,clearDecision,voteFor,confirmChoice,deferChoice} from './desk-decision.mjs?v=20261008.1';
-import {readingShelf,readerName,catalogueSelection,readerEvidenceHTML} from './desk-presentation.mjs?v=20261008.1';
-import {themeFavorites,favoriteReferences,shortlistText,copyShortlistText} from './desk-interactions.mjs?v=20261008.1';
+import {CATALOG,DEMO,byId,recommend,sessionFromURL,seedQuery} from './shared/engine.mjs?v=20261008.2';
+import {$,$$,escape,brand,svg,bookTile,reasonHTML,bindDialog,toast,makeRecorder} from './shared/ui.mjs?v=20261008.2';
+import {DeskGalaxy} from './desk-galaxy.mjs?v=20261008.2';
+import {reconcileRanking} from './desk-ranking.mjs?v=20261008.2';
+import {installBridge} from './shared/bridge.mjs?v=20261008.2';
+import {VOTE_OPTIONS,voteLabel,bothWilling,clearDecision,voteFor,confirmChoice,deferChoice} from './desk-decision.mjs?v=20261008.2';
+import {readingShelf,readerName,catalogueSelection,readerEvidenceHTML} from './desk-presentation.mjs?v=20261008.2';
+import {themeFavorites,favoriteReferences,shortlistText,copyShortlistText,sampleFit} from './desk-interactions.mjs?v=20261008.2';
 
 document.documentElement.dataset.embedded=String(window.parent!==window);
 const input=sessionFromURL();
-const state={...input,reader:'a',stage:'select',query:'',filter:'all',mode:input.mode,results:[],selected:null,votes:{},choice:null,deferred:false,undo:null,handoff:'',exploration:null};
+const state={...input,reader:'a',stage:'select',query:'',filter:'all',mode:input.mode,results:[],selected:null,votes:{},choice:null,deferred:false,undo:null,handoff:'',exploration:null,samplePair:false};
 const recorder=makeRecorder('reading-desk');
 const seenReveals=new Set();
 const compactViewport=matchMedia('(max-width: 760px)');
+const motionTimers=new WeakMap();
 let shelvesOpen=!compactViewport.matches;
-let resultMap,pageObserver,detailObserver,lastDetailTrigger,explorerTrigger;
+let resultMap,pageObserver,detailObserver,lastDetailTrigger,explorerTrigger,shelfObserver,sampleTrigger;
 let detailMode='recommendation';
 compactViewport.addEventListener('change',event=>{shelvesOpen=!event.matches;const shelves=$('#selected-shelves');if(shelves)shelves.open=shelvesOpen;});
 if(state.a.length===5&&state.b.length===5){state.stage='results';state.results=recommend(state.a,state.b,state.mode);state.selected=state.results[0].book.id;}
 
-function header(){return `<header class="site-header"><a class="brand" href="./?v=20261008.1" aria-label="TasteBridge home">${brand}</a><nav class="site-nav" aria-label="Main navigation"><button id="nav-select" class="${state.stage==='select'?'active':''}">Pick books</button><button id="nav-results" class="${state.stage==='results'?'active':''}">Recommendations</button><a class="project-link" href="/project/">Project</a></nav><a id="other-version" class="other-version" href="../b/?v=20261008.1&${seedQuery(state.a,state.b,state.mode)}">View version B <span aria-hidden="true">↗</span></a></header>`;}
+function header(){return `<header class="site-header"><a class="brand" href="./?v=20261008.2" aria-label="TasteBridge home">${brand}</a><nav class="site-nav" aria-label="Main navigation"><button id="nav-select" class="${state.stage==='select'?'active':''}">Pick books</button><button id="nav-results" class="${state.stage==='results'?'active':''}">Recommendations</button><a class="project-link" href="/project/">Project</a></nav><a id="other-version" class="other-version" href="../b/?v=20261008.2&${seedQuery(state.a,state.b,state.mode)}">View version B <span aria-hidden="true">↗</span></a></header>`;}
 function footer(){return `<footer class="footer-line"><span>Frontend prototype · ${CATALOG.length} sample books</span><a class="project-link" href="/project/">About the project ↗</a></footer>`;}
 function revealItems(nodes,context,root=null){
  if(typeof IntersectionObserver!=='function'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -27,34 +29,61 @@ function revealItems(nodes,context,root=null){
  return observer;
 }
 function render(){
- pageObserver?.disconnect();detailObserver?.disconnect();resultMap?.destroy();resultMap=null;
- $('#app').innerHTML=header()+`<main class="desk-main">${state.stage==='select'?selectHTML():resultsHTML()}${footer()}</main><dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"><button class="close-dialog" aria-label="Close book details">${svg('close')}</button><div id="detail-body"></div></dialog>`;
+ pageObserver?.disconnect();detailObserver?.disconnect();shelfObserver?.disconnect();resultMap?.destroy();resultMap=null;
+ $('#app').innerHTML=header()+`<main class="desk-main"><nav class="journey-progress" aria-label="Your shared reading journey">${journeyProgressHTML()}</nav>${state.stage==='select'?selectHTML():resultsHTML()}${footer()}</main><dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"><button class="close-dialog" aria-label="Close book details">${svg('close')}</button><div id="detail-body"></div></dialog><dialog id="sample-dialog" class="flow-dialog" aria-labelledby="sample-title"><h2 id="sample-title">Try a sample pair?</h2><p>This replaces the favorites you have chosen with an example pair for exploring the demo.</p><div class="flow-actions"><button id="keep-favorites" class="secondary">Keep my books</button><button id="use-sample-pair" class="primary">Use sample pair</button></div></dialog>`;
  $$('a.project-link').forEach(link=>link.addEventListener('click',()=>{link.href=`/project/?${seedQuery(state.a,state.b,state.mode)}`;}));
  $('#nav-select').onclick=editPicks;
  $('#nav-results').onclick=()=>{if(state.a.length!==5||state.b.length!==5){toast('Each reader needs 5 books.');return;}showResults();};
  const dialog=$('#detail-dialog');bindDialog(dialog);$('.close-dialog').onclick=()=>dialog.close();
  dialog.addEventListener('close',()=>{const trigger=lastDetailTrigger;state.exploration=null;requestAnimationFrame(()=>restoreDetailFocus(trigger));});
  dialog.addEventListener('cancel',event=>{if(detailMode==='recommendation'&&state.exploration){event.preventDefault();closeExplorer();}});
- dialog.addEventListener('keydown',event=>{if(detailMode!=='recommendation'||state.exploration||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||event.target.closest('input,textarea,select,[contenteditable]'))return;if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();navigateCandidate(event.key==='ArrowLeft'?-1:1);}});
+ dialog.addEventListener('keydown',event=>{if(detailMode!=='recommendation'||state.exploration||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||event.target.closest('input,textarea,select,button,a,summary,[contenteditable]'))return;if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();navigateCandidate(event.key==='ArrowLeft'?-1:1);}});
+ bindJourneyProgress();
+ const sampleDialog=$('#sample-dialog');bindDialog(sampleDialog);$('#keep-favorites').onclick=()=>sampleDialog.close();$('#use-sample-pair').onclick=loadSamplePair;sampleDialog.addEventListener('close',()=>{if(sampleTrigger?.isConnected)sampleTrigger.focus({preventScroll:true});});
  if(state.stage==='select')bindSelect();else bindResults();
+ trackShelfHeight();
 }
+function journeyProgressHTML(){
+ const current=state.stage==='results'?'results':state.reader;
+ return [['a','Reader 1'],['b','Reader 2'],['results','Choose together']].map(([step,label],index)=>`<button data-step="${step}" ${current===step?'aria-current="step"':''} ${step==='results'&&(state.a.length!==5||state.b.length!==5)?'disabled':''}><span class="step-index">${String(index+1).padStart(2,'0')}</span><span class="step-label">${label}${step==='results'?'':` <small>${state[step].length}/5</small>`}</span></button>`).join('');
+}
+function bindJourneyProgress(){
+ $$('[data-step]').forEach(button=>button.onclick=()=>{const step=button.dataset.step;if(step==='results'){if(state.a.length===5&&state.b.length===5)showResults();return;}if(state.stage==='select'){switchReader(step);return;}state.reader=step;editPicks();});
+}
+function updateJourneyProgress(){const progress=$('.journey-progress');if(!progress)return;progress.innerHTML=journeyProgressHTML();bindJourneyProgress();}
+function trackShelfHeight(){
+ const panel=$('.pair-panel');document.documentElement.style.removeProperty('--shelf-height');if(!panel)return;
+ const measure=()=>document.documentElement.style.setProperty('--shelf-height',`${compactViewport.matches?Math.ceil(panel.getBoundingClientRect().height):0}px`);
+ measure();if(typeof ResizeObserver==='function'){shelfObserver=new ResizeObserver(measure);shelfObserver.observe(panel);}
+}
+function requestSamplePair(trigger){
+ if(state.a.length||state.b.length){sampleTrigger=trigger;$('#sample-dialog').showModal();$('#keep-favorites').focus();return;}
+ loadSamplePair();
+}
+function loadSamplePair(){
+ state.a=[...DEMO.a];state.b=[...DEMO.b];state.samplePair=true;state.undo=null;state.exploration=null;state.handoff='';clearDecision(state);recorder.record('use_demo');showResults();
+}
+
 function titleFocus(){$('#page-title')?.focus({preventScroll:true});}
 function editPicks(){state.stage='select';state.query='';state.filter='all';state.exploration=null;render();titleFocus();}
-function selectionStatus(){if(state.a.length===5&&state.b.length===5)return 'Both readers are ready.';const count=state[state.reader].length;return count===5?`${readerName(state.reader)} is ready.`:`Choose ${5-count} more ${count===4?'book':'books'}.`;}
-function continueLabel(){if(state.a.length===5&&state.b.length===5)return 'Show 5 recommendations';if(state[state.reader].length<5)return 'Pick 5 favorites';return `Continue to ${readerName(state.reader==='a'?'b':'a')}`;}
+function selectionStatus(){if(state.a.length===5&&state.b.length===5)return 'Both sets are ready. Explore your five recommendations.';const count=state[state.reader].length;return count===5?`${readerName(state.reader)}’s five are ready.`:`${readerName(state.reader)} · Choose ${5-count} more ${count===4?'book':'books'}.`;}
+
+function continueLabel(){if(state.a.length===5&&state.b.length===5)return 'Explore 5 recommendations';if(state[state.reader].length<5){const remaining=5-state[state.reader].length;return `Choose ${remaining} more ${remaining===1?'book':'books'}`;}return `Continue to ${readerName(state.reader==='a'?'b':'a')}`;}
+
 function readerShelfHTML(reader){return `<section class="reader-summary reader-${reader} ${state.reader===reader?'active':''}"><div class="summary-head"><strong>${readerName(reader)} <span>${state[reader].length}/5</span></strong><button data-reader="${reader}" aria-label="Edit ${readerName(reader)} favorites">${state.reader===reader?'Editing':'Edit'}</button></div><div class="seed-slots">${readingShelf(state[reader],reader)}</div><div class="shelf-actions"><button class="quiet" data-clear-reader="${reader}" ${state[reader].length?'':'disabled'}>Clear ${readerName(reader)}</button></div></section>`;}
-function selectHTML(){return `<section class="intro"><div><h1 id="page-title" tabindex="-1">Find your next <em>read together.</em></h1><p>Five favorites each. Five books to read together.</p></div><button id="demo" class="sample-button">Try sample books <span aria-hidden="true">↗</span></button></section><div class="desk-workspace"><section class="catalogue reader-${state.reader}" aria-labelledby="pick-title"><div class="section-top"><h2 id="pick-title">Pick your favorites</h2><div class="reader-tabs" role="group" aria-label="Reader choosing books">${['a','b'].map(reader=>`<button class="reader-${reader} ${state.reader===reader?'active':''}" data-reader="${reader}" aria-pressed="${state.reader===reader}">${readerName(reader)} <span>${state[reader].length}/5</span></button>`).join('')}</div></div><p id="selection-status" class="selection-status" role="status">${selectionStatus()}</p><p id="handoff-note" class="handoff-note" role="status">${escape(state.handoff)}</p><label class="search-field">${svg('search')}<span class="sr-only">Search by book title or author</span><input id="search" type="search" placeholder="Search titles or authors" autocomplete="off" value="${escape(state.query)}"></label><div class="catalogue-toolbar"><div class="filter-list" role="group" aria-label="Book category">${[['all','All books'],['fantasy','Fantasy'],['mystery','Mystery'],['bridge','Both']].map(([id,name])=>`<button data-filter="${id}" class="${state.filter===id?'active':''}" aria-pressed="${state.filter===id}">${name}</button>`).join('')}</div><span id="catalogue-count" class="catalogue-count"></span></div><p id="catalogue-feedback" role="status"></p><div id="book-grid" class="book-grid"></div></section><aside class="pair-panel" aria-label="Selected favorites"><details id="selected-shelves" class="shelf-disclosure" ${shelvesOpen?'open':''}><summary><span>Your books</span><span class="shelf-counts">${shelfCountsHTML()}</span></summary><div class="shelf-content">${['a','b'].map(readerShelfHTML).join('')}<button id="undo-selection" class="quiet" ${state.undo?'':'hidden'}>Undo last change</button></div></details><button id="pair-next" class="pair-next" ${state[state.reader].length<5?'disabled':''}>${continueLabel()} <span aria-hidden="true">→</span></button></aside></div>`;}
+function selectHTML(){return `<section class="intro"><div><h1 id="page-title" tabindex="-1">Find your next <em>read together.</em></h1><p>Start with books you love. Find one to read together.</p></div><button id="demo" class="sample-button">Try a sample pair <span aria-hidden="true">↗</span></button></section><div class="desk-workspace"><section class="catalogue reader-${state.reader}" aria-labelledby="pick-title"><div class="section-top"><h2 id="pick-title">Pick your favorites</h2><div class="reader-tabs" role="group" aria-label="Reader choosing books">${['a','b'].map(reader=>`<button class="reader-${reader} ${state.reader===reader?'active':''}" data-reader="${reader}" aria-pressed="${state.reader===reader}">${readerName(reader)} <span>${state[reader].length}/5</span></button>`).join('')}</div></div><p id="selection-status" class="selection-status" role="status">${selectionStatus()}</p><p id="handoff-note" class="handoff-note" role="status">${escape(state.handoff)}</p><label class="search-field">${svg('search')}<span class="sr-only">Search by book title or author</span><input id="search" type="search" placeholder="Search titles or authors" autocomplete="off" value="${escape(state.query)}"></label><p class="demo-scope-note">23-book sample catalogue. Missing a favorite? <button id="sample-inline" class="quiet">Try a sample pair</button></p><div class="catalogue-toolbar"><div class="filter-list" role="group" aria-label="Book category">${[['all','All books'],['fantasy','Fantasy'],['mystery','Mystery'],['bridge','Fantasy & mystery']].map(([id,name])=>`<button data-filter="${id}" class="${state.filter===id?'active':''}" aria-pressed="${state.filter===id}">${name}</button>`).join('')}</div><span id="catalogue-count" class="catalogue-count"></span></div><p id="catalogue-feedback" role="status"></p><div id="book-grid" class="book-grid"></div></section><aside class="pair-panel" aria-label="Selected favorites"><details id="selected-shelves" class="shelf-disclosure" ${shelvesOpen?'open':''}><summary><span>Your books</span><span class="shelf-counts">${shelfCountsHTML()}</span></summary><div class="shelf-content">${['a','b'].map(readerShelfHTML).join('')}<button id="undo-selection" class="quiet" ${state.undo?'':'hidden'}>Undo last change</button></div></details><button id="pair-next" class="pair-next" ${state[state.reader].length<5?'disabled':''}>${continueLabel()} <span aria-hidden="true">→</span></button></aside></div>`;}
 function shelfCountsHTML(){return ['a','b'].map((reader,index)=>`<span aria-label="${readerName(reader)} ${state[reader].length} of 5 books"><i aria-hidden="true">${index+1}</i>${state[reader].length}/5</span>`).join('');}
 function bookPickHTML(book){const view=catalogueSelection(book,state.a,state.b,state.reader);return `<button class="book-pick ${view.selected?'is-picked':''}" data-book="${book.id}" aria-label="${escape(view.ariaLabel)}" aria-pressed="${view.selected}">${bookTile(book,{selected:view.selected})}<span class="book-pick-note">${escape(view.label)}</span></button>`;}
 function renderBooks(){
  pageObserver?.disconnect();
  const books=CATALOG.filter(book=>(state.filter==='all'||book.kind===state.filter)&&`${book.title} ${book.author}`.toLowerCase().includes(state.query.toLowerCase().trim()));
- $('#catalogue-count').textContent=`${books.length} books`;
+ $('#catalogue-count').textContent=`${books.length} ${books.length===1?'book':'books'}`;
  const category={fantasy:'Fantasy',mystery:'Mystery',bridge:'Fantasy / Mystery'}[state.filter],query=state.query.trim();
  $('#catalogue-feedback').textContent=query?`${books.length} ${books.length===1?'match':'matches'} for “${query}”${category?` in ${category}`:''}.`:category?`${books.length} ${category} books.`:'';
- $('#book-grid').innerHTML=books.length?books.map(bookPickHTML).join(''):`<div class="empty-message"><p>No books match this search and category.</p><button id="clear-search" class="secondary">Show all books</button></div>`;
+ $('#book-grid').innerHTML=books.length?books.map(bookPickHTML).join(''):`<div class="empty-message"><p>That book is not in this sample catalogue.</p><p>You can browse the 23 sample books or try an example pair.</p><div class="empty-actions"><button id="clear-search" class="secondary">Browse sample books</button><button id="empty-sample" class="primary">Try a sample pair</button></div></div>`;
  $$('[data-book]').forEach(button=>button.onclick=()=>toggleBook(button.dataset.book));
  $('#clear-search')?.addEventListener('click',()=>{state.query='';state.filter='all';$('#search').value='';syncFilters();renderBooks();$('#search').focus({preventScroll:true});});
+ $('#empty-sample')?.addEventListener('click',event=>requestSamplePair(event.currentTarget));
  pageObserver=revealItems($$('[data-book]'),'catalogue');
 }
 function syncFilters(){$$('[data-filter]').forEach(button=>{button.classList.toggle('active',button.dataset.filter===state.filter);button.setAttribute('aria-pressed',String(button.dataset.filter===state.filter));});}
@@ -66,18 +95,23 @@ function syncCatalogueSelection(){
  });
 }
 function syncSelectionChrome(){
+ updateJourneyProgress();
  $('.catalogue').classList.toggle('reader-a',state.reader==='a');$('.catalogue').classList.toggle('reader-b',state.reader==='b');
  $$('[data-reader]').forEach(button=>{const reader=button.dataset.reader;if(button.closest('.reader-tabs')){button.innerHTML=`${readerName(reader)} <span>${state[reader].length}/5</span>`;button.classList.toggle('active',state.reader===reader);button.setAttribute('aria-pressed',String(state.reader===reader));}else button.textContent=state.reader===reader?'Editing':'Edit';});
  ['a','b'].forEach(reader=>{const summary=$(`.reader-summary.reader-${reader}`);summary.classList.toggle('active',state.reader===reader);$('.summary-head strong',summary).innerHTML=`${readerName(reader)} <span>${state[reader].length}/5</span>`;$('[data-clear-reader]',summary).disabled=state[reader].length===0;});
  $('.shelf-counts').innerHTML=shelfCountsHTML();$('#selection-status').textContent=selectionStatus();$('#handoff-note').textContent=state.handoff;
  $('#pair-next').disabled=state[state.reader].length<5;$('#pair-next').innerHTML=`${continueLabel()} <span aria-hidden="true">→</span>`;$('#undo-selection').hidden=!state.undo;
- $('#other-version').href=`../b/?v=20261008.1&${seedQuery(state.a,state.b,state.mode)}`;
+ $('#other-version').href=`../b/?v=20261008.2&${seedQuery(state.a,state.b,state.mode)}`;
 }
 function updateShelf(reader){const summary=$(`.reader-summary.reader-${reader}`);$('.seed-slots',summary).innerHTML=readingShelf(state[reader],reader);bindShelf(summary);}
-function motionHook(node,name){if(!node)return;node.classList.remove('just-added','just-removed');node.classList.add(name);setTimeout(()=>{if(node.isConnected)node.classList.remove(name);},450);}
+function motionHook(node,name,duration=450){
+ if(!node||matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('reduce-motion'))return;
+ clearTimeout(motionTimers.get(node));node.classList.remove('just-added','just-removed','detail-browse-next','detail-browse-prev','choice-arrived');
+ void node.offsetWidth;node.classList.add(name);motionTimers.set(node,setTimeout(()=>{if(node.isConnected)node.classList.remove(name);motionTimers.delete(node);},duration));
+}
 function switchReader(reader,{handoff=false}={}){
  if(state.reader===reader){$('#search').focus({preventScroll:true});return;}
- state.reader=reader;state.handoff=handoff?`${readerName(reader)}, your turn. The other reader’s books are kept.`:`Now editing ${readerName(reader)}.`;
+ state.reader=reader;state.handoff=handoff?`${readerName(reader)}, your turn. The first five are kept.`:`Now editing ${readerName(reader)}.`;
  if(handoff){state.query='';state.filter='all';$('#search').value='';syncFilters();renderBooks();if(compactViewport.matches){shelvesOpen=false;$('#selected-shelves').open=false;}}
  syncSelectionChrome();syncCatalogueSelection();$('#search').focus({preventScroll:!handoff});recorder.record('switch_reader',{reader});
 }
@@ -98,9 +132,9 @@ function bindSelect(){
  $$('.reader-summary').forEach(bindShelf);
  $('#undo-selection').onclick=()=>{const change=state.undo;if(!change)return;state[change.reader]=[...change.before];state.undo=null;invalidateInput();updateShelf(change.reader);syncSelectionChrome();syncCatalogueSelection();$('#selected-shelves summary').focus({preventScroll:true});toast('Last selection change undone.');};
  $('#pair-next').onclick=()=>{if(state.a.length===5&&state.b.length===5)showResults();else switchReader(state.reader==='a'?'b':'a',{handoff:true});};
- $('#demo').onclick=()=>{state.a=[...DEMO.a];state.b=[...DEMO.b];state.undo=null;state.exploration=null;clearDecision(state);recorder.record('use_demo');showResults();};
+ $('#demo').onclick=event=>requestSamplePair(event.currentTarget);$('#sample-inline').onclick=event=>requestSamplePair(event.currentTarget);
 }
-function invalidateInput(){clearDecision(state);state.results=[];state.selected=null;state.exploration=null;}
+function invalidateInput(){state.samplePair=false;clearDecision(state);state.results=[];state.selected=null;state.exploration=null;}
 function changeFavorites(reader,ids){state.undo={reader,before:[...state[reader]]};state[reader]=[...ids];state.handoff='';invalidateInput();updateShelf(reader);syncSelectionChrome();syncCatalogueSelection();}
 function toggleBook(id){
  const ids=state[state.reader],wasSelected=ids.includes(id);
@@ -111,10 +145,16 @@ function toggleBook(id){
  recorder.record(wasSelected?'remove_seed':'add_seed',{reader:state.reader,count:state[state.reader].length});
 }
 function showResults(){state.results=recommend(state.a,state.b,state.mode);state.selected=state.results[0].book.id;state.stage='results';state.query='';state.exploration=null;recorder.record('show_results',{aggregation:state.mode});render();window.scrollTo({top:0,behavior:'instant'});titleFocus();}
-function resultsHTML(){return `<section class="result-top"><h1 id="page-title" tabindex="-1">Your 5 recommendations</h1><div class="result-actions"><button id="open-galaxy" class="secondary">${svg('map')}Taste galaxy</button><button id="copy-shortlist" class="secondary">Copy shortlist</button><button id="show-shortlist" class="quiet">Show shortlist text</button><button id="edit-picks" class="secondary">Change books</button></div></section><p id="copy-status" class="sr-only" role="status"></p><section id="copy-fallback" class="copy-fallback" hidden aria-label="Manual shortlist copy"><p id="copy-help">Select this text and copy it.</p><textarea id="shortlist-text" readonly rows="8" aria-label="Shortlist text to copy"></textarea><div><button id="select-copy-text" class="secondary">Select text</button><button id="close-copy-fallback" class="quiet">Close</button></div></section><div id="decision-panel"></div><section class="results-layout" aria-label="Five recommendations"><div class="mode-control"><label for="aggregation">Preference balance</label><select id="aggregation"><option value="least-misery" ${state.mode==='least-misery'?'selected':''}>Balance both readers</option><option value="average" ${state.mode==='average'?'selected':''}>Average both readers</option></select></div><div id="result-list" class="result-list"></div></section><details id="taste-map-panel" class="taste-map-disclosure"><summary>Taste galaxy</summary><div class="galaxy-panel"><div class="map-legend"><span><i></i>Reader 1</span><span><i></i>Reader 2</span><span><i></i>Recommendations</span></div><div id="large-map" class="large-map"></div><div id="map-selected" class="map-selected"></div></div></details>`;}
+function resultsHTML(){return `<section class="result-top"><div><h1 id="page-title" tabindex="-1">Five books. <em>One shared read.</em></h1><p>Compare the reasons for each of you, then choose together.</p></div><div class="result-actions"><button id="open-galaxy" class="secondary">${svg('map')}Taste galaxy</button><details class="shortlist-options" id="shortlist-options"><summary>Share shortlist</summary><div><button id="copy-shortlist" class="secondary">Copy titles</button><button id="show-shortlist" class="quiet">Show text to copy</button></div></details><button id="edit-picks" class="secondary">Change books</button></div></section>${state.samplePair?'<p class="sample-pair-note">Example pair · These favorites are a sample, not your reading history.</p>':''}<p id="copy-status" class="sr-only" role="status"></p><section id="copy-fallback" class="copy-fallback" hidden aria-label="Manual shortlist copy"><p id="copy-help">Select this text and copy it.</p><textarea id="shortlist-text" readonly rows="8" aria-label="Shortlist text to copy"></textarea><div><button id="select-copy-text" class="secondary">Select text</button><button id="close-copy-fallback" class="quiet">Close</button></div></section><div id="decision-panel"></div><section class="results-layout" aria-label="Five recommendations"><div class="mode-control"><label for="aggregation">Rank by</label><select id="aggregation"><option value="least-misery" ${state.mode==='least-misery'?'selected':''}>Lower reader match</option><option value="average" ${state.mode==='average'?'selected':''}>Average reader match</option></select></div><p class="ranking-note" id="ranking-note" role="status">${rankingNote()}</p><div id="result-list" class="result-list"></div></section><details id="taste-map-panel" class="taste-map-disclosure"><summary>Taste galaxy</summary><p class="demo-scope-note">The map and ranking use the same sample themes. The 2D projection is approximate.</p><div class="galaxy-panel"><div class="map-legend"><span><i></i>Reader 1</span><span><i></i>Reader 2</span><span><i></i>Recommendations</span></div><div id="large-map" class="large-map"></div><div id="map-selected" class="map-selected"></div></div></details>`;}
+function rankingNote(){return `${state.mode==='average'?'Ordered by the average of both readers’ sample matches.':'Ordered by the lower of the two readers’ sample matches.'} Interests stay with books that remain in the shortlist.`;}
+function animateRanking(previous){
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('reduce-motion'))return;
+ $$('.result-card[data-result]').forEach(card=>{const before=previous.get(card.dataset.result),after=card.getBoundingClientRect();if(!before||Math.abs(before.top-after.top)<1||before.bottom<0&&after.bottom<0||before.top>innerHeight&&after.top>innerHeight||typeof card.animate!=='function')return;card.animate([{transform:`translateY(${before.top-after.top}px)`},{transform:'translateY(0)'}],{duration:460,easing:'cubic-bezier(.22,1,.36,1)'});});
+}
+
 function bindResults(){
  $('#edit-picks').onclick=editPicks;
- $('#aggregation').onchange=event=>{state.mode=event.target.value;clearDecision(state);state.exploration=null;state.results=recommend(state.a,state.b,state.mode);state.selected=state.results[0].book.id;renderResultsContent();recorder.record('change_aggregation',{aggregation:state.mode});toast('Recommendations updated. Share your interest again.');};
+ $('#aggregation').onchange=event=>{const previous=new Map($$('.result-card[data-result]').map(card=>[card.dataset.result,card.getBoundingClientRect()])),mode=event.target.value,summary=reconcileRanking(state,recommend(state.a,state.b,mode),mode);state.exploration=null;$('#ranking-note').textContent=rankingNote();renderResultsContent();animateRanking(previous);recorder.record('change_aggregation',{aggregation:state.mode});toast(summary.choiceChanged?'The shortlist changed. Your previous choice is no longer available.':summary.removedVoteCount?'Shortlist updated. Interests are kept for the books still here.':'Order updated. Your interests are kept.');};
  resultMap=new DeskGalaxy($('#large-map'),{onSelect:id=>openDetail(id,{kind:'map',id}),onFavorite:id=>openFavorite(id,{kind:'favorite-map',id})});
  $('#open-galaxy').onclick=()=>{const panel=$('#taste-map-panel');panel.open=true;resultMap.update(state.a,state.b,state.results,state.selected);panel.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});$('summary',panel).focus({preventScroll:true});};
  $('#copy-shortlist').onclick=async()=>{
@@ -124,12 +164,13 @@ function bindResults(){
   status.textContent=copied?'Shortlist copied.':'Clipboard unavailable. Copy the text manually.';
   if(copied){toast('Shortlist copied.');if(!$('#copy-fallback').hidden)$('#copy-help').textContent='This shortlist is also available to copy manually.';}
   else showShortlistText(true);
+  $('#shortlist-options').open=false;if(copied)$('#shortlist-options summary').focus({preventScroll:true});
   recorder.record('copy_shortlist',{outcome:copied?'copied':'manual'});
  };
- $('#show-shortlist').onclick=()=>showShortlistText(false);
+ $('#show-shortlist').onclick=()=>{showShortlistText(false);$('#shortlist-options').open=false;};
  $('#select-copy-text').onclick=()=>{$('#shortlist-text').focus();$('#shortlist-text').select();};
- $('#close-copy-fallback').onclick=()=>{$('#copy-fallback').hidden=true;$('#copy-shortlist').focus({preventScroll:true});};
- $('#shortlist-text').onkeydown=event=>{if(event.key==='Escape'){$('#copy-fallback').hidden=true;$('#copy-shortlist').focus({preventScroll:true});}};
+ $('#close-copy-fallback').onclick=()=>{$('#copy-fallback').hidden=true;$('#shortlist-options summary').focus({preventScroll:true});};
+ $('#shortlist-text').onkeydown=event=>{if(event.key==='Escape'){$('#copy-fallback').hidden=true;$('#shortlist-options summary').focus({preventScroll:true});}};
  renderResultsContent();
 }
 function showShortlistText(failed=false){
@@ -149,12 +190,12 @@ function bindDecision(){
 }
 function renderResultsContent(){
  pageObserver?.disconnect();$('#decision-panel').innerHTML=decisionHTML();bindDecision();
- $('#result-list').innerHTML=state.results.map((result,index)=>{const id=result.book.id,votes=state.votes[id]||{},chosen=state.choice===id;return `<button class="result-card ${index===0?'featured-result':''} ${state.selected===id?'selected':''} ${chosen?'joint-choice':''}" data-result="${id}" aria-label="View ${escape(result.book.title)} and both readers' reasons${chosen?'; chosen together':''}"><span class="rank-number" aria-hidden="true">${index+1}</span>${bookTile(result.book)}<div class="result-info"><div class="result-title-line"><h2>${escape(result.book.title)}</h2><span class="detail-cue" aria-hidden="true">↗</span></div><p>${escape(result.book.author)}</p><div class="result-evidence-preview">${['a','b'].map(reader=>`<div class="result-reason-preview reader-${reader}"><span class="reason-preview-label">${readerName(reader)} · Your reference</span><strong>${escape(result.reasons[reader].seedTitle)}</strong><span class="reason-preview-tags">${result.reasons[reader].tags.slice(0,2).map(escape).join(' · ')||'No shared themes'}</span></div>`).join('')}</div><div class="card-vote-row">${['a','b'].map(reader=>`<span class="reader-${reader}">${readerName(reader)}: ${voteLabel(votes[reader])}</span>`).join('')}${chosen?'<strong class="card-outcome">Chosen together</strong>':bothWilling(votes)?'<span class="card-outcome">Both interested · Confirm to choose</span>':''}</div></div></button>`;}).join('');
+ $('#result-list').innerHTML=state.results.map((result,index)=>{const id=result.book.id,votes=state.votes[id]||{},chosen=state.choice===id;return `<button class="result-card  ${state.selected===id?'selected':''} ${chosen?'joint-choice':''}" data-result="${id}" aria-label="View ${escape(result.book.title)} and both readers' reasons${chosen?'; chosen together':''}"><span class="rank-number" aria-hidden="true">${index+1}</span>${bookTile(result.book)}<div class="result-info"><div class="result-title-line"><h2>${escape(result.book.title)}</h2><span class="detail-cue" aria-hidden="true">↗</span></div><p>${escape(result.book.author)}</p><div class="result-evidence-preview">${['a','b'].map(reader=>`<div class="result-reason-preview reader-${reader}"><span class="reason-preview-label">${readerName(reader)} · Your reference</span><strong>${escape(result.reasons[reader].seedTitle)}</strong><span class="reason-preview-tags">${result.reasons[reader].tags.slice(0,2).map(escape).join(' · ')||'No shared themes'}</span></div>`).join('')}</div><div class="sample-fit-summary" aria-label="Approximate sample theme overlap">${['a','b'].map(reader=>{const fit=sampleFit(reader==='a'?result.fitA:result.fitB);return `<div class="reader-${reader}" data-fit="${fit.level}"><span>${readerName(reader)}</span><strong>${escape(fit.label)}</strong></div>`;}).join('')}</div><div class="card-vote-row">${['a','b'].map(reader=>`<span class="reader-${reader}">${readerName(reader)}: ${voteLabel(votes[reader])}</span>`).join('')}${chosen?'<strong class="card-outcome">Chosen together</strong>':bothWilling(votes)?'<span class="card-outcome">Both interested · Confirm to choose</span>':''}</div></div></button>`;}).join('');
  $$('.result-card[data-result]',$('#result-list')).forEach(button=>button.onclick=()=>openDetail(button.dataset.result));
  const result=state.results.find(item=>item.book.id===state.selected)||state.results[0];
  $('#map-selected').innerHTML=`<div>${escape(result.book.title)}</div><button id="map-detail" class="secondary">View reasons</button>`;
  $('#map-detail').onclick=()=>openDetail(result.book.id,{kind:'map-action',id:result.book.id});
- $$('a[href^="../b/"]').forEach(link=>link.href=`../b/?v=20261008.1&${seedQuery(state.a,state.b,state.mode)}`);
+ $$('a[href^="../b/"]').forEach(link=>link.href=`../b/?v=20261008.2&${seedQuery(state.a,state.b,state.mode)}`);
  resultMap.update(state.a,state.b,state.results,state.selected);pageObserver=revealItems($$('.result-card[data-result]',$('#result-list')),'recommendation');
  if(!$('#copy-fallback').hidden)$('#shortlist-text').value=shortlistText(state.results,state.choice);
 }
@@ -163,14 +204,15 @@ function restoreDetailFocus(trigger){
  let target;if(trigger?.kind==='favorite-map'||trigger?.kind==='map')target=mapNode(trigger.id);else if(trigger?.kind==='map-action')target=$('#map-detail');else target=$(`.result-card[data-result="${trigger?.id||state.selected}"]`);
  (target||$('#open-galaxy')||$('#page-title'))?.focus({preventScroll:true});
 }
-function opinionNote(votes={}){if(bothWilling(votes))return 'Both interested. Confirm to choose it together.';if(votes.a==='no'||votes.b==='no')return 'Keep exploring the other books.';if(votes.a==='unsure'||votes.b==='unsure')return 'Not sure yet? You can come back to this one.';if(votes.a||votes.b)return 'Waiting for the other reader.';return 'Interest is optional. Confirm only when you both agree.';}
+function opinionNote(votes={}){if(bothWilling(votes))return 'Both interested. Confirm to choose it together.';if(votes.a==='no'||votes.b==='no')return 'Keep exploring the other books.';if(votes.a==='unsure'||votes.b==='unsure')return 'Not sure yet? You can come back to this one.';if(votes.a||votes.b)return 'Waiting for the other reader.';return 'Mark Interested for each reader to enable a shared choice.';}
 function detailHTML(result,index){
  const id=result.book.id,votes=state.votes[id]||{},chosen=state.choice===id,previous=state.results[(index+state.results.length-1)%state.results.length],next=state.results[(index+1)%state.results.length];
- return `<div class="detail-header"><span class="book-position">Book ${index+1} of 5</span><h2 id="detail-title" tabindex="-1">${escape(result.book.title)}</h2><p>${escape(result.book.author)} · ${result.book.year}</p></div><div class="reasons">${['a','b'].map(reader=>readerEvidenceHTML(result,reader,state[reader],state.exploration)).join('')}</div><section id="evidence-explorer" class="evidence-explorer" hidden></section><div class="votes-block"><h3>Would you read this?</h3><div class="desk-vote-columns">${['a','b'].map(reader=>`<section class="desk-vote-reader reader-${reader}" aria-label="${readerName(reader)} interest"><strong>${readerName(reader)}</strong><div class="desk-vote-options">${VOTE_OPTIONS.map(([value,label])=>`<button data-vote="${reader}:${value}" aria-label="${readerName(reader)}: ${label}" aria-pressed="${votes[reader]===value}" class="${votes[reader]===value?'chosen':''}">${label}</button>`).join('')}</div></section>`).join('')}</div><p id="opinion-note" class="vote-state" role="status">${chosen?'Chosen together. You can change your mind.':opinionNote(votes)}</p></div><div class="detail-choice-actions"><button id="confirm-choice" class="primary" ${!bothWilling(votes)||chosen?'disabled':''}>${chosen?'Chosen together':'Confirm together'}</button></div><nav class="detail-pagination" aria-label="Browse the five recommendations"><button id="prev-candidate" class="secondary" aria-label="Previous book: ${escape(previous.book.title)}">← Previous</button><span class="candidate-position">${index+1} / 5</span><button id="next-candidate" class="secondary" aria-label="Next book: ${escape(next.book.title)}">Next →</button></nav>`;
+ return `<div class="detail-header detail-header-cover"><div class="detail-cover" aria-hidden="true">${bookTile(result.book,{compact:true})}</div><div class="detail-header-copy"><span class="book-position">Book ${index+1} of 5</span><h2 id="detail-title" tabindex="-1">${escape(result.book.title)}</h2><p>${escape(result.book.author)} · ${result.book.year}</p></div></div><nav class="detail-pagination" aria-label="Browse the five recommendations"><button id="prev-candidate" class="secondary" aria-label="Previous book: ${escape(previous.book.title)}">← Previous</button><span class="candidate-position">${index+1} / 5</span><button id="next-candidate" class="secondary" aria-label="Next book: ${escape(next.book.title)}">Next →</button></nav><div class="reasons">${['a','b'].map(reader=>reasonHTML(result,reader)).join('')}</div><div class="votes-block"><h3>Would you each read this?</h3><div class="desk-vote-columns">${['a','b'].map(reader=>`<section class="desk-vote-reader reader-${reader}" aria-label="${readerName(reader)} interest"><strong>${readerName(reader)}</strong><div class="desk-vote-options">${VOTE_OPTIONS.map(([value,label])=>`<button data-vote="${reader}:${value}" aria-label="${readerName(reader)}: ${label}" aria-pressed="${votes[reader]===value}" class="${votes[reader]===value?'chosen':''}">${label}</button>`).join('')}</div></section>`).join('')}</div><p id="opinion-note" class="vote-state" role="status">${chosen?'Chosen together. You can change your mind.':opinionNote(votes)}</p></div><div class="detail-choice-actions"><button id="confirm-choice" class="primary" ${!bothWilling(votes)||chosen?'disabled':''}>${chosen?'Chosen together':'Choose this book together'}</button></div><details class="detail-evidence" id="detail-evidence-panel" ${state.exploration?'open':''}><summary>Explore the connections</summary><div class="reasons">${['a','b'].map(reader=>readerEvidenceHTML(result,reader,state[reader],state.exploration,{includeReason:false})).join('')}</div><section id="evidence-explorer" class="evidence-explorer" hidden></section></details>`;
 }
+
 function refreshDetail(id,focus){
- detailObserver?.disconnect();detailMode='recommendation';const index=state.results.findIndex(result=>result.book.id===id),dialog=$('#detail-dialog');
- dialog.dataset.bookId=id;$('#detail-body').innerHTML=detailHTML(state.results[index],index);bindDetail(id);renderExplorer();if(focus)$(focus)?.focus({preventScroll:true});
+ const evidenceOpen=$('#detail-evidence-panel')?.open;detailObserver?.disconnect();detailMode='recommendation';const index=state.results.findIndex(result=>result.book.id===id),dialog=$('#detail-dialog');
+ const sameBook=dialog.dataset.bookId===id;dialog.dataset.bookId=id;$('#detail-body').innerHTML=detailHTML(state.results[index],index);if(sameBook&&evidenceOpen)$('#detail-evidence-panel').open=true;bindDetail(id);renderExplorer();if(focus)$(focus)?.focus({preventScroll:true});
  if(dialog.open)detailObserver=revealItems($$('.reason'),`reason-${id}`,dialog);
 }
 function openDetail(id,trigger={kind:'result',id}){
@@ -179,10 +221,10 @@ function openDetail(id,trigger={kind:'result',id}){
  state.selected=id;state.exploration=null;renderResultsContent();refreshDetail(id);recorder.record('open_explanation',{rank:state.results.findIndex(result=>result.book.id===id)+1});
  if(!dialog.open)dialog.showModal();$('#detail-title').focus({preventScroll:true});detailObserver=revealItems($$('.reason'),`reason-${id}`,dialog);
 }
-function navigateCandidate(direction){const index=state.results.findIndex(result=>result.book.id===state.selected),next=(index+direction+state.results.length)%state.results.length;state.selected=state.results[next].book.id;state.exploration=null;if(lastDetailTrigger&&['result','map','map-action'].includes(lastDetailTrigger.kind))lastDetailTrigger.id=state.selected;renderResultsContent();refreshDetail(state.selected,'#detail-title');recorder.record('open_explanation',{rank:next+1});}
+function navigateCandidate(direction){const index=state.results.findIndex(result=>result.book.id===state.selected),next=(index+direction+state.results.length)%state.results.length;state.selected=state.results[next].book.id;state.exploration=null;if(lastDetailTrigger&&['result','map','map-action'].includes(lastDetailTrigger.kind))lastDetailTrigger.id=state.selected;renderResultsContent();refreshDetail(state.selected,'#detail-title');motionHook($('#detail-body'),direction>0?'detail-browse-next':'detail-browse-prev',420);recorder.record('open_explanation',{rank:next+1});}
 function bindDetail(id){
  $$('[data-vote]').forEach(button=>button.onclick=()=>{const [reader,vote]=button.dataset.vote.split(':'),revoked=voteFor(state,id,reader,vote);recorder.record('vote',{rank:state.results.findIndex(result=>result.book.id===id)+1,reader,vote});refreshDetail(id,`[data-vote="${reader}:${vote}"]`);renderResultsContent();if(revoked)toast('Interest changed. The shared choice was undone.');});
- $('#confirm-choice').onclick=()=>{if(!confirmChoice(state,id))return;refreshDetail(id,'#detail-title');renderResultsContent();recorder.record('confirm_choice',{rank:state.results.findIndex(result=>result.book.id===id)+1});toast('Chosen together.');};
+ $('#confirm-choice').onclick=()=>{if(!confirmChoice(state,id))return;refreshDetail(id,'#detail-title');renderResultsContent();motionHook($('.decision-strip.confirmed'),'choice-arrived',520);motionHook($('.detail-choice-actions'),'choice-arrived',520);recorder.record('confirm_choice',{rank:state.results.findIndex(result=>result.book.id===id)+1});toast('Chosen together.');};
  $('#prev-candidate').onclick=()=>navigateCandidate(-1);$('#next-candidate').onclick=()=>navigateCandidate(1);bindEvidence();
 }
 function bindEvidence(){
@@ -219,7 +261,7 @@ function openFavorite(id,trigger){
 
 installBridge({
  read:()=>({a:[...state.a],b:[...state.b],mode:state.mode,stage:state.stage,fixture:'manual-tags-v1',recommendations:state.results.map(result=>result.book.id)}),
- apply:data=>{state.a=data.a;state.b=data.b;state.mode=data.mode;clearDecision(state);state.undo=null;state.handoff='';state.exploration=null;state.query='';state.filter='all';state.reader='a';const complete=state.a.length===5&&state.b.length===5;state.results=complete?recommend(state.a,state.b,state.mode):[];state.selected=state.results[0]?.book.id||null;state.stage=complete?'results':'select';render();},
+ apply:data=>{state.a=data.a;state.b=data.b;state.mode=data.mode;state.samplePair=false;clearDecision(state);state.undo=null;state.handoff='';state.exploration=null;state.query='';state.filter='all';state.reader='a';const complete=state.a.length===5&&state.b.length===5;state.results=complete?recommend(state.a,state.b,state.mode):[];state.selected=state.results[0]?.book.id||null;state.stage=complete?'results':'select';render();},
  find:()=>showResults()
 });
 
