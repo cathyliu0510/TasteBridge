@@ -1,0 +1,6 @@
+{
+  "model_version": "sample-shelf-toy-v1",
+  "created_at": "2026-10-11",
+  "data_version": "hand-curated-sample-52",
+  "note": "Toy shelf-tag embeddings for frontend integration; not a trained model."
+}
