@@ -693,9 +693,22 @@ summary:focus-visible,textarea:focus-visible{
 .reduce-motion .reveal-item,.reduce-motion .detail-dialog,.reduce-motion .flow-dialog{
  animation:none!important;opacity:1;transform:none;
 }
+.api-status{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 20px;padding:14px 18px;border:1px solid #bdcbb0;background:#eef1e3;border-radius:4px;font-size:14px;line-height:1.5}
+.api-status p{margin:0;flex:1 1 240px}.api-error{background:#f4ebe3;border-color:#ccb99f}
+.loading-dot{display:inline-block;width:8px;height:8px;margin-right:5px;border-radius:50%;background:var(--pine);animation:api-pulse 1s ease-in-out infinite alternate}
+.reader-taste-summary{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:0 0 24px}
+.reader-taste-summary p{margin:0;padding-left:12px;border-left:2px solid var(--a);display:grid;gap:5px;font-size:14px;line-height:1.5;color:var(--muted)}
+.reader-taste-summary .reader-b{border-color:var(--b)}.reader-taste-summary strong{color:var(--pine);font-weight:500}
+.anonymous-feedback{flex:1 1 100%;padding-top:10px;border-top:1px solid #bbc8b0;display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:13px;line-height:1.5}
+.anonymous-feedback p{margin:0;color:var(--muted)}.decision-strip:has(.anonymous-feedback){flex-wrap:wrap}
+@keyframes api-pulse{to{opacity:.25}}
+@media(max-width:760px){.reader-taste-summary{gap:12px}.anonymous-feedback{flex-direction:column;align-items:flex-start}.api-status{padding:12px}.api-status .secondary,.api-status .quiet{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.loading-dot{animation:none}}
+
+.footer-line{flex-wrap:wrap}.footer-actions{display:flex;gap:16px;flex-wrap:wrap}
 
 </style>
-<script type="application/json" id="prototype-metadata">{"project":"TasteBridge","kind":"Frontend prototype","version":"A","direction":"Preferred: Reading Desk","sourceRelease":"20261008.2","data":"23 sample books; deterministic local recommendations","offline":true}</script>
+<script type="application/json" id="prototype-metadata">{"project":"TasteBridge","kind":"Frontend prototype","version":"A","direction":"Preferred: Reading Desk","sourceRelease":"20261012.1","data":"23 sample books; deterministic local recommendations","offline":true,"optionalApiMode":"?api=1, with a same-origin /api proxy"}</script>
 <!-- Embedded typefaces: Geist and Instrument Serif. SIL Open Font Licenses:
 Copyright 2024 The Geist Project Authors (https://github.com/vercel/geist-font.git)
 
@@ -925,13 +938,24 @@ const BOOKS = [
 // Use only pre-2017 fixtures to mirror the age of the proposal's data. Do not
 // interpret inclusion as confirmation of membership in the UCSD catalogue.
 const CATALOG = BOOKS.filter(x=>x.year<=2017);
-const byId = id => CATALOG.find(x=>x.id===id);
+const apiBooks = new Map();
+let useApiBooks = false;
+function enableApiCatalogue(){useApiBooks=true;apiBooks.clear();}
+function cacheApiBooks(books,{full=false}={}){
+ const colors=['#365781','#6b6646','#427060','#885944','#4c6576','#7a4236'];
+ return books.map(book=>{
+  const old=apiBooks.get(book.id),hash=[...book.id].reduce((sum,char)=>sum+char.charCodeAt(0),0);
+  const value={...book,tags:!full&&old?.detailsLoaded?old.tags:book.tags,source:'api',color:colors[hash%colors.length],kind:'catalogue',detailsLoaded:full||old?.detailsLoaded||false};
+  apiBooks.set(book.id,value);return value;
+ });
+}
+const byId = id => useApiBooks?apiBooks.get(id):CATALOG.find(x=>x.id===id);
 const DEMO = {
  a:['mistborn','name-wind','hobbit','earthsea','magicians'],
  b:['gone-girl','girl-train','rebecca','orient','sharp']
 };
 
-return { "TAGS": TAGS, "BOOKS": BOOKS, "CATALOG": CATALOG, "byId": byId, "DEMO": DEMO };
+return { "TAGS": TAGS, "BOOKS": BOOKS, "CATALOG": CATALOG, "enableApiCatalogue": enableApiCatalogue, "cacheApiBooks": cacheApiBooks, "byId": byId, "DEMO": DEMO };
 })();
 
 // Source: shared/engine.mjs
@@ -968,14 +992,296 @@ function project(v){
  const y=[.2,.25,1.1,-.8,-.65,-.55,.85,-.1,.65,-.2,1.05,-.8];
  return {x:dot(v,x)/(norm(v)||1),y:dot(v,y)/(norm(v)||1)};
 }
-function sessionFromURL(){
+function sessionFromURL({api=false}={}){
  const q=new URLSearchParams(location.search);
- const clean=key=>[...new Set((q.get(key)||'').split(',').filter(byId))].slice(0,5);
+ const clean=key=>{
+  const raw=q.get(key)||'';let ids=raw.split(',');
+  if(api&&raw.startsWith('[')){try{ids=JSON.parse(raw);}catch{ids=[];}}
+  if(!Array.isArray(ids))return [];
+  return [...new Set(ids.filter(id=>api?typeof id==='string'&&id.length>0&&[...id].length<=64:byId(id)))].slice(0,5);
+ };
  return {a:clean('a'),b:clean('b'),mode:q.get('mode')==='average'?'average':'least-misery'};
 }
-function seedQuery(a,b,mode='least-misery'){return new URLSearchParams({a:a.join(','),b:b.join(','),mode}).toString();}
+function seedQuery(a,b,mode='least-misery',{api=false}={}){return new URLSearchParams({a:api?JSON.stringify(a):a.join(','),b:api?JSON.stringify(b):b.join(','),mode,...(api?{api:'1'}:{})}).toString();}
 
 return { "CATALOG": CATALOG, "byId": byId, "TAGS": TAGS, "DEMO": DEMO, "cosine": cosine, "profile": profile, "validateSeeds": validateSeeds, "recommend": recommend, "evidence": evidence, "topTags": topTags, "project": project, "sessionFromURL": sessionFromURL, "seedQuery": seedQuery };
+})();
+
+// Source: ../api/client.mjs
+__modules["../api/client.mjs"] = (() => {
+// SPEC v0.3 adapter. API book IDs are opaque; never translate fixture slugs by
+// title, and never recompute server scores or galaxy coordinates in the browser.
+class TasteBridgeApiError extends Error {
+  constructor(message, { kind = 'contract', status = null, unknownIds = [] } = {}) {
+    super(message);
+    this.name = 'TasteBridgeApiError';
+    Object.assign(this, { kind, status, unknownIds });
+  }
+}
+
+const fail = message => { throw new TasteBridgeApiError(message); };
+const record = (value, name) => value && typeof value === 'object' && !Array.isArray(value)
+  ? value : fail(`Invalid API ${name}.`);
+const string = (value, name) => typeof value === 'string' && value.length
+  ? value : fail(`Invalid API ${name}.`);
+const list = (value, name) => Array.isArray(value) ? value : fail(`Invalid API ${name}.`);
+const strings = (value, name) => list(value, name).map(item => string(item, name));
+const number = (value, name) => Number.isFinite(value) ? value : fail(`Invalid API ${name}.`);
+const id = value => {
+  const text = string(value, 'book ID');
+  if ([...text].length > 64) fail('A book ID must have at most 64 characters.');
+  return text;
+};
+const modelVersion = value => {
+  const text = string(value, 'model version');
+  if ([...text].length > 128) fail('A model version must have at most 128 characters.');
+  return text;
+};
+const modeToApi = mode => mode === 'least-misery' || mode === 'least_misery'
+  ? 'least_misery' : mode === 'average' ? 'average' : fail('Unknown ranking method.');
+const position = value => {
+  const point = record(value, 'position');
+  return { x: number(point.x, 'x coordinate'), y: number(point.y, 'y coordinate') };
+};
+
+function mapApiBook(value, { full = false } = {}) {
+  const book = record(value, 'book');
+  const year = book.year ?? null;
+  if (year !== null && !Number.isInteger(year)) fail('Invalid API publication year.');
+  const coverUrl = book.cover_url ?? null;
+  if (coverUrl !== null) {
+    if (typeof coverUrl !== 'string') fail('Invalid API cover URL.');
+    let url;
+    try { url = new URL(coverUrl); } catch { fail('Invalid API cover URL.'); }
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password)
+      fail('Invalid API cover URL.');
+  }
+  return {
+    id: id(book.book_id), title: string(book.title, 'title'),
+    author: string(book.author, 'author'), year, coverUrl,
+    // Search responses are summaries. Fetch /books/{id} before showing evidence.
+    tags: full ? strings(book.shelves, 'shelves') : book.shelves ? strings(book.shelves, 'shelves') : []
+  };
+}
+
+function mapReason(value, seeds, bookTags) {
+  const reason = record(value, 'reason'), seedId = id(reason.seed_id);
+  if (!seeds.includes(seedId)) fail('A reason references a different reader’s favorites.');
+  if (typeof reason.same_author !== 'boolean') fail('Invalid API author evidence.');
+  const tags = strings(reason.shared_shelves, 'shared shelves');
+  if (tags.some(tag => !bookTags.includes(tag))) fail('A reason names a shelf absent from its book.');
+  return {
+    seedId, seedTitle: string(reason.seed_title, 'seed title'),
+    sameAuthor: reason.same_author, tags, text: string(reason.text, 'reason text'),
+    source: 'Catalogue metadata.'
+  };
+}
+
+function pointsFor(value, expectedIds) {
+  const points = list(value, 'galaxy points').map(raw => {
+    const point = record(raw, 'galaxy point');
+    return { id: id(point.book_id), title: string(point.title, 'galaxy title'), ...position(point) };
+  });
+  const ids = points.map(point => point.id);
+  if (new Set(ids).size !== ids.length || ids.length !== expectedIds.length ||
+      expectedIds.some(bookId => !ids.includes(bookId))) fail('Galaxy IDs do not match the selection.');
+  return points;
+}
+
+function makeRecommendationRequest(a, b, mode = 'least-misery') {
+  for (const seeds of [a, b]) {
+    if (!Array.isArray(seeds) || seeds.length !== 5 || new Set(seeds).size !== 5)
+      fail('Choose five different books for each reader.');
+    seeds.forEach(id);
+  }
+  return { reader_a: [...a], reader_b: [...b], k: 5, aggregation: modeToApi(mode) };
+}
+
+function mapRecommendationResponse(value, request) {
+  const body = record(value, 'recommendation response');
+  const aggregation = modeToApi(body.aggregation);
+  if (aggregation !== request.aggregation) fail('The API returned a different ranking method.');
+  const model = modelVersion(body.model_version), shelves = record(body.top_shelves, 'top shelves');
+  const seeds = new Set([...request.reader_a, ...request.reader_b]);
+  const results = list(body.recommendations, 'recommendations').map((raw, index) => {
+    const item = record(raw, 'recommendation'), book = mapApiBook(item.book, { full: true });
+    if (seeds.has(book.id)) fail('The API recommended a selected favorite.');
+    if (item.rank !== index + 1) fail('Invalid API recommendation rank.');
+    const reasons = record(item.reasons, 'reader reasons');
+    return {
+      rank: item.rank, book, score: number(item.score, 'score'),
+      fitA: number(item.fit_a, 'Reader 1 score'), fitB: number(item.fit_b, 'Reader 2 score'),
+      reasons: {
+        a: mapReason(reasons.reader_a, request.reader_a, book.tags),
+        b: mapReason(reasons.reader_b, request.reader_b, book.tags)
+      },
+      position: position(item.position)
+    };
+  });
+  const resultIds = results.map(result => result.book.id);
+  if (results.length > request.k || new Set(resultIds).size !== resultIds.length)
+    fail('Invalid API shortlist length or duplicate book.');
+  const rawGalaxy = record(body.galaxy, 'galaxy');
+  const galaxy = {
+    a: pointsFor(rawGalaxy.reader_a, request.reader_a),
+    b: pointsFor(rawGalaxy.reader_b, request.reader_b),
+    bridges: pointsFor(rawGalaxy.bridges, resultIds)
+  };
+  for (const result of results) {
+    const point = galaxy.bridges.find(node => node.id === result.book.id);
+    if (point.x !== result.position.x || point.y !== result.position.y)
+      fail('The recommendation and galaxy positions disagree.');
+  }
+  return {
+    modelVersion: model, mode: aggregation === 'average' ? 'average' : 'least-misery',
+    topShelves: { a: strings(shelves.reader_a, 'Reader 1 shelves'), b: strings(shelves.reader_b, 'Reader 2 shelves') },
+    results, galaxy
+  };
+}
+
+function makeFeedbackRequest({ bookId, vote, modelVersion: model }) {
+  // An explicit joint action only. Individual yes/no/unsure answers stay local.
+  if (!['would_read', 'not_for_us'].includes(vote)) fail('Choose an explicit joint feedback action.');
+  return { book_id: id(bookId), vote, model_version: modelVersion(model) };
+}
+
+class TasteBridgeClient {
+  constructor({ baseUrl, fetchImpl = globalThis.fetch, timeoutMs = 10000 }) {
+    const url = new URL(baseUrl);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash)
+      fail('Provide a plain HTTP or HTTPS API address.');
+    if (typeof fetchImpl !== 'function' || !Number.isFinite(timeoutMs) || timeoutMs <= 0)
+      fail('Invalid API client configuration.');
+    this.baseUrl = url.href.replace(/\/$/, '');
+    // Browsers require window.fetch's receiver to be Window. Node permits the
+    // unbound function, so an API-only test would not catch this difference.
+    this.fetchImpl = (url, options) => fetchImpl.call(globalThis, url, options);
+    this.timeoutMs = timeoutMs;
+  }
+
+  async request(path, { method = 'GET', body, signal } = {}) {
+    if (signal?.aborted) throw signal.reason ?? new DOMException('Cancelled', 'AbortError');
+    const controller = new AbortController();
+    const cancel = () => controller.abort(signal.reason);
+    signal?.addEventListener('abort', cancel, { once: true });
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, this.timeoutMs);
+    try {
+      const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+        method, credentials: 'omit', signal: controller.signal,
+        headers: body ? { 'Content-Type': 'application/json' } : {},
+        ...(body ? { body: JSON.stringify(body) } : {})
+      });
+      let value;
+      try { value = await response.json(); } catch {
+        if (controller.signal.aborted) throw controller.signal.reason;
+        throw new TasteBridgeApiError('The API returned an unreadable response.', { status: response.status });
+      }
+      if (!response.ok) {
+        const unknownIds = response.status === 404 && Array.isArray(value?.detail?.unknown_ids)
+          ? value.detail.unknown_ids.filter(item => typeof item === 'string') : [];
+        const message = response.status === 404 ? 'Some books are unavailable. Search the API catalogue again.'
+          : response.status === 422 ? 'Check the selected books and ranking method.'
+          : response.status === 503 && path === '/feedback' ? 'The API could not save this feedback. Try again.'
+          : response.status >= 500 ? 'The book service is unavailable. Try again.'
+          : 'The API request failed. Try again.';
+        throw new TasteBridgeApiError(message, { kind: 'http', status: response.status, unknownIds });
+      }
+      return value;
+    } catch (error) {
+      if (signal?.aborted) throw signal.reason ?? new DOMException('Cancelled', 'AbortError');
+      if (timedOut) throw new TasteBridgeApiError('The API took too long. Try again.', { kind: 'timeout' });
+      if (error instanceof TasteBridgeApiError) throw error;
+      throw new TasteBridgeApiError('Cannot reach the API. Check that it is running.', { kind: 'network' });
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', cancel);
+    }
+  }
+
+  async health(options) {
+    const value = record(await this.request('/health', options), 'health');
+    if (value.status !== 'ok' || !Number.isInteger(value.num_books) || value.num_books < 1)
+      fail('Invalid API health response.');
+    return { status: 'ok', modelVersion: modelVersion(value.model_version), numBooks: value.num_books };
+  }
+
+  async searchBooks(query, { limit = 10, signal } = {}) {
+    if (typeof query !== 'string' || [...query].length > 100 || !Number.isInteger(limit) || limit < 1 || limit > 25)
+      fail('Use a search of at most 100 characters and a limit from 1 to 25.');
+    const params = new URLSearchParams({ q: query, limit: String(limit) });
+    return list(await this.request(`/books/search?${params}`, { signal }), 'search results').map(value => mapApiBook(value));
+  }
+
+  async book(bookId, options) {
+    const expected = id(bookId);
+    const book = mapApiBook(await this.request(`/books/${encodeURIComponent(expected)}`, options), { full: true });
+    if (book.id !== expected) fail('The API returned a different book.');
+    return book;
+  }
+
+  async recommend(a, b, mode = 'least-misery', options = {}) {
+    const request = makeRecommendationRequest(a, b, mode);
+    const value = await this.request('/recommend', { ...options, method: 'POST', body: request });
+    return mapRecommendationResponse(value, request);
+  }
+
+  async feedback(action, options = {}) {
+    const value = await this.request('/feedback', { ...options, method: 'POST', body: makeFeedbackRequest(action) });
+    if (value?.ok !== true) fail('The API did not confirm that feedback was saved.');
+    return { ok: true };
+  }
+}
+
+return { "TasteBridgeApiError": TasteBridgeApiError, "mapApiBook": mapApiBook, "makeRecommendationRequest": makeRecommendationRequest, "mapRecommendationResponse": mapRecommendationResponse, "makeFeedbackRequest": makeFeedbackRequest, "TasteBridgeClient": TasteBridgeClient };
+})();
+
+// Source: desk-api.mjs
+__modules["desk-api.mjs"] = (() => {
+const { TasteBridgeClient } = __modules["../api/client.mjs"];
+
+const { cacheApiBooks, byId } = __modules["shared/catalog.mjs"];
+
+// A superseded response must not overwrite a newer search or favorite list,
+// even if the transport ignores cancellation and returns successfully.
+class LatestRequests{
+ constructor(){this.lanes=new Map();}
+ cancel(lane){this.lanes.get(lane)?.abort();this.lanes.delete(lane);}
+ async run(lane,execute){
+  this.cancel(lane);const controller=new AbortController();this.lanes.set(lane,controller);
+  try{
+   const value=await execute(controller.signal);
+   if(controller.signal.aborted||this.lanes.get(lane)!==controller)throw new DOMException('Superseded','AbortError');
+   return value;
+  }finally{if(this.lanes.get(lane)===controller)this.lanes.delete(lane);}
+ }
+}
+
+const API_SAMPLE={a:['w_1001','w_1002','w_1003','w_1004','w_1005'],b:['w_2001','w_2002','w_2003','w_2004','w_2005']};
+class ApiDesk{
+ constructor(baseUrl,{client}={}){this.client=client||new TasteBridgeClient({baseUrl});this.requests=new LatestRequests();}
+ health(){return this.requests.run('health',signal=>this.client.health({signal}));}
+ async search(query){
+  const books=await this.requests.run('search',signal=>this.client.searchBooks(query,{limit:25,signal}));
+  return cacheApiBooks(books);
+ }
+ async book(id,options){
+  if(byId(id)?.detailsLoaded)return byId(id);
+  const book=await this.client.book(id,options);return cacheApiBooks([book],{full:true})[0];
+ }
+ async favorites(a,b){
+  const books=await this.requests.run('favorites',signal=>Promise.all([...new Set([...a,...b])].map(id=>this.book(id,{signal}))));
+  return books;
+ }
+ async recommend(a,b,mode){
+  const reply=await this.requests.run('recommend',signal=>this.client.recommend(a,b,mode,{signal}));
+  const books=cacheApiBooks(reply.results.map(result=>result.book),{full:true});
+  return {...reply,results:reply.results.map((result,index)=>({...result,book:books[index]}))};
+ }
+ feedback(action){return this.client.feedback(action);}
+}
+
+return { "LatestRequests": LatestRequests, "API_SAMPLE": API_SAMPLE, "ApiDesk": ApiDesk };
 })();
 
 // Source: shared/ui.mjs
@@ -990,7 +1296,9 @@ const svg=(type)=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" strok
 const brand=`<span class="brand-mark" aria-hidden="true"><i></i><i></i></span><span>TasteBridge</span>`;
 function bookTile(book,{selected=false,compact=false}={}){
  const coverArt=__covers[book.id];
- return `<span class="book-object ${compact?'compact':''}" data-cover="${escape(book.id)}" style="--book:${book.color};--cover-art:url('${escape(coverArt)}')"><span class="book-top">${book.year}</span><span class="book-title">${escape(book.title)}</span><span class="book-author">${escape(book.author)}</span>${selected?`<span class="book-check">${svg('check')}</span>`:''}</span>`;
+ const art=book.source==='api'?book.coverUrl:coverArt;
+ const style=`--book:${book.color};--cover-art:${art?`url(${JSON.stringify(art)})`:'none'}`;
+ return `<span class="book-object ${compact?'compact':''}" data-cover="${escape(book.id)}" style="${escape(style)}"><span class="book-top">${escape(book.year??'')}</span><span class="book-title">${escape(book.title)}</span><span class="book-author">${escape(book.author)}</span>${selected?`<span class="book-check">${svg('check')}</span>`:''}</span>`;
 }
 function seedSlots(ids,reader){
  return Array.from({length:5},(_,i)=>ids[i]?`<button class="seed-slot filled" data-remove="${ids[i]}" aria-label="Remove ${escape(byId(ids[i]).title)} from Reader ${reader==='a'?'1':'2'}">${bookTile(byId(ids[i]),{compact:true})}<span class="slot-remove">${svg('close')}</span></button>`:`<span class="seed-slot vacant"><span>0${i+1}</span>${svg('plus')}</span>`).join('');
@@ -1006,7 +1314,7 @@ function bindDialog(dialog,onClose){
  dialog.addEventListener('cancel',onClose||(()=>{}));
  dialog.addEventListener('close',()=>requestAnimationFrame(()=>{
   const id=dialog.dataset.bookId;
-  if(id)$(`[data-result="${id}"]`)?.focus({preventScroll:true});
+  if(id)$$('[data-result]').find(node=>node.dataset.result===id)?.focus({preventScroll:true});
  }));
 }
 function motionPreference(){let m=matchMedia('(prefers-reduced-motion: reduce)').matches;try{m=localStorage.getItem('tastebridge-motion')==='off'||m;}catch{}return m;}
@@ -1027,6 +1335,30 @@ const { escape, svg } = __modules["shared/ui.mjs"];
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const stableJitter=id=>[...id].reduce((sum,letter)=>sum+letter.charCodeAt(0),0);
+
+function galaxyLayout(a,b,results,galaxy=null){
+ const ids=[...new Set([...results.map(result=>result.book.id),...a,...b])];
+ const supplied=new Map();
+ if(galaxy)for(const point of [...galaxy.a,...galaxy.b,...galaxy.bridges]){
+  const old=supplied.get(point.id);
+  if(old&&(old.x!==point.x||old.y!==point.y))throw new Error('Conflicting galaxy coordinates.');
+  supplied.set(point.id,{x:point.x,y:point.y});
+ }
+ const raw=ids.map(id=>({id,p:galaxy?supplied.get(id):project(byId(id).vector)}));
+ if(raw.some(({p})=>!p||!Number.isFinite(p.x)||!Number.isFinite(p.y)))throw new Error('Missing galaxy coordinates.');
+ const xs=raw.map(book=>book.p.x),ys=raw.map(book=>book.p.y);
+ const xmin=Math.min(-1,...xs),xmax=Math.max(1,...xs),ymin=Math.min(-1,...ys),ymax=Math.max(1,...ys);
+ const convert=point=>({x:85+(point.x-xmin)/(xmax-xmin)*590,y:70+(point.y-ymin)/(ymax-ymin)*255});
+ const positions=new Map(raw.map(({id,p})=>{
+  const point=convert(p),jitter=galaxy?0:stableJitter(id);
+  return [id,galaxy?point:{x:point.x+(jitter%5-2)*7,y:point.y+(Math.floor(jitter/5)%5-2)*6}];
+ }));
+ // API cluster centers are visual centroids of the displayed favorites. Their
+ // coordinates are never treated as reader embeddings or used for scoring.
+ const centroid=seeds=>({x:seeds.reduce((sum,id)=>sum+supplied.get(id).x,0)/(seeds.length||1),y:seeds.reduce((sum,id)=>sum+supplied.get(id).y,0)/(seeds.length||1)});
+ const centers=galaxy?[convert(centroid(a)),convert(centroid(b))]:[convert(project(profile(a))),convert(project(profile(b)))];
+ return {ids,positions,centers};
+}
 
 // A projection of the exact sample vectors used by ranking, with a small,
 // deterministic label-separation offset. This prototype does not use UMAP.
@@ -1075,33 +1407,24 @@ class DeskGalaxy{
    this.resizeObserver=new ResizeObserver(()=>this.updateHitTargets());this.resizeObserver.observe(this.svg);
   }
  }
- update(a,b,results,selected=null){
+ update(a,b,results,selected=null,galaxy=null){
   this.tooltip.classList.remove('show');
   this.a=a;this.b=b;this.results=results;this.selected=selected;
   this.resultLookup=new Map(results.map((result,index)=>[result.book.id,{...result,index}]));
-  const ids=[...new Set([...results.map(result=>result.book.id),...a,...b])];
-  const raw=ids.map(id=>({id,p:project(byId(id).vector)}));
-  const xs=raw.map(book=>book.p.x),ys=raw.map(book=>book.p.y);
-  const xmin=Math.min(-1,...xs),xmax=Math.max(1,...xs),ymin=Math.min(-1,...ys),ymax=Math.max(1,...ys);
-  const convert=point=>({x:85+(point.x-xmin)/(xmax-xmin)*590,y:70+(point.y-ymin)/(ymax-ymin)*255});
-  this.positions=new Map(raw.map(({id,p})=>{
-   const point=convert(p),jitter=stableJitter(id);
-   return [id,{x:point.x+(jitter%5-2)*7,y:point.y+(Math.floor(jitter/5)%5-2)*6}];
-  }));
-  const centers=[convert(project(profile(a))),convert(project(profile(b)))];
+  const {ids,positions,centers}=galaxyLayout(a,b,results,galaxy);this.positions=positions;
   const clusterPaths=[a,b].map((seeds,index)=>seeds.map(id=>{
    const point=this.positions.get(id),center=centers[index];
    return `<path class="cluster-line" d="M${center.x},${center.y} L${point.x},${point.y}" stroke="var(--${index?'b':'a'})" stroke-opacity=".12" fill="none"/>`;
   }).join('')).join('');
   const evidencePaths=results.map(result=>['a','b'].map(reader=>{
    const point=this.positions.get(result.book.id),seed=this.positions.get(result.reasons[reader].seedId);
-   return `<path class="evidence-line" data-result="${result.book.id}" data-seed="${result.reasons[reader].seedId}" data-reader="${reader}" d="M${seed.x},${seed.y} Q${(seed.x+point.x)/2},${Math.min(seed.y,point.y)-35} ${point.x},${point.y}" fill="none" stroke="var(--${reader})" stroke-width="1.5" opacity="0"/>`;
+   return `<path class="evidence-line" data-result="${escape(result.book.id)}" data-seed="${escape(result.reasons[reader].seedId)}" data-reader="${reader}" d="M${seed.x},${seed.y} Q${(seed.x+point.x)/2},${Math.min(seed.y,point.y)-35} ${point.x},${point.y}" fill="none" stroke="var(--${reader})" stroke-width="1.5" opacity="0"/>`;
   }).join('')).join('');
   const nodes=ids.map(id=>{
    const book=byId(id),point=this.positions.get(id),result=this.resultLookup.get(id),reader=a.includes(id)&&b.includes(id)?'both':a.includes(id)?'a':'b';
    const color=result?'var(--gold)':reader==='b'?'var(--b)':'var(--a)';
-   const label=result?`Bridge book ${result.index+1} of 5: ${book.title}. Open both readers' reasons.`:`${reader==='both'?'Both readers’':reader==='a'?'Reader 1’s':'Reader 2’s'} favorite: ${book.title}. Explore its sample themes.`;
-   return `<g class="map-node ${result?'is-bridge':'is-favorite'}" data-id="${id}" data-reader="${reader}" data-selected="${id===selected}" data-hover="false" transform="translate(${point.x},${point.y})" tabindex="0" role="button" aria-label="${escape(label)}" ${result?`aria-pressed="${id===selected}"`:''}><title>${escape(book.title)}</title><circle class="node-hit" r="23" fill="transparent"/><circle class="node-halo" r="${result?16:10}" fill="${color}" fill-opacity=".13"/><circle class="node-core" r="${result?5:4}" fill="${color}"/>${reader==='both'&&!result?'<circle r="7" fill="none" stroke="var(--b)" stroke-width="1.6"/>':''}<circle class="node-ring" r="22" fill="none" stroke="${color}" stroke-width=".8" opacity="${id===selected?1:0}"/>${result?`<text class="node-number" y="-23" text-anchor="middle" fill="var(--ink)" font-size="13">${result.index+1}</text>`:''}<text class="node-label" y="39" text-anchor="middle" fill="var(--ink)" font-size="13" opacity="${id===selected?1:0}">${escape(book.title.length>32?book.title.slice(0,29)+'…':book.title)}</text></g>`;
+   const label=result?`Bridge book ${result.index+1} of ${results.length}: ${book.title}. Open both readers' reasons.`:`${reader==='both'?'Both readers’':reader==='a'?'Reader 1’s':'Reader 2’s'} favorite: ${book.title}. Explore its themes.`;
+   return `<g class="map-node ${result?'is-bridge':'is-favorite'}" data-id="${escape(id)}" data-reader="${reader}" data-selected="${id===selected}" data-hover="false" transform="translate(${point.x},${point.y})" tabindex="0" role="button" aria-label="${escape(label)}" ${result?`aria-pressed="${id===selected}"`:''}><title>${escape(book.title)}</title><circle class="node-hit" r="23" fill="transparent"/><circle class="node-halo" r="${result?16:10}" fill="${color}" fill-opacity=".13"/><circle class="node-core" r="${result?5:4}" fill="${color}"/>${reader==='both'&&!result?'<circle r="7" fill="none" stroke="var(--b)" stroke-width="1.6"/>':''}<circle class="node-ring" r="22" fill="none" stroke="${color}" stroke-width=".8" opacity="${id===selected?1:0}"/>${result?`<text class="node-number" y="-23" text-anchor="middle" fill="var(--ink)" font-size="13">${result.index+1}</text>`:''}<text class="node-label" y="39" text-anchor="middle" fill="var(--ink)" font-size="13" opacity="${id===selected?1:0}">${escape(book.title.length>32?book.title.slice(0,29)+'…':book.title)}</text></g>`;
   }).join('');
   this.svg.innerHTML=`<desc>Numbered stars are bridge books. Select a star to inspect a favorite or recommendation. Arrow keys move focus between nearby stars; Enter opens the book.</desc><g class="map-content"><ellipse cx="${centers[0].x}" cy="${centers[0].y}" rx="112" ry="80" fill="none" stroke="var(--a)" stroke-opacity=".11"/><ellipse cx="${centers[1].x}" cy="${centers[1].y}" rx="112" ry="80" fill="none" stroke="var(--b)" stroke-opacity=".11"/>${clusterPaths}${evidencePaths}${nodes}<text x="${centers[0].x}" y="${Math.min(405,centers[0].y+106)}" text-anchor="middle" fill="var(--a)" font-size="14">Reader 1</text><text x="${centers[1].x}" y="${Math.min(405,centers[1].y+106)}" text-anchor="middle" fill="var(--b)" font-size="14">Reader 2</text></g>`;
   this.group=this.svg.querySelector('.map-content');this.transform();
@@ -1174,7 +1497,7 @@ class DeskGalaxy{
  destroy(){this.lifecycle.abort();this.resizeObserver?.disconnect();}
 }
 
-return { "DeskGalaxy": DeskGalaxy };
+return { "galaxyLayout": galaxyLayout, "DeskGalaxy": DeskGalaxy };
 })();
 
 // Source: desk-decision.mjs
@@ -1190,7 +1513,8 @@ function clearDecision(state){
 function voteFor(state,id,reader,value){
  if(!['a','b'].includes(reader)||!VOTE_OPTIONS.some(([key])=>key===value))throw new Error('Invalid reader or interest.');
  if(!state.results.some(result=>result.book.id===id))throw new Error('Choose from the current five recommendations.');
- state.votes[id]??={};state.votes[id][reader]=value;state.deferred=false;
+ if(!Object.hasOwn(state.votes,id))Object.defineProperty(state.votes,id,{value:{},writable:true,enumerable:true,configurable:true});
+ state.votes[id][reader]=value;state.deferred=false;
  const revoked=state.choice===id&&!bothWilling(state.votes[id]);
  if(revoked)state.choice=null;
  return revoked;
@@ -1262,11 +1586,11 @@ function installBridge(controller){
   const target=url.pathname.match(/\/(a|b)\//)?.[1];
   if(url.origin===location.origin&&current&&target&&current!==target){e.preventDefault();window.parent.postMessage({type:'tastebridge:switch',version:target,session:read()},location.origin);}
  });
- window.addEventListener('message',e=>{
+ window.addEventListener('message',async e=>{
   if(e.origin!==location.origin||e.source!==window.parent||!e.data)return;
   if(e.data.type==='tastebridge:read')e.source.postMessage({type:'tastebridge:session',requestId:e.data.requestId,session:read()},location.origin);
   if(e.data.type==='tastebridge:apply'){
-   try{controller.apply(validateSession(e.data.session));e.source.postMessage({type:'tastebridge:applied',requestId:e.data.requestId},location.origin);}
+   try{await controller.apply(validateSession(e.data.session));e.source.postMessage({type:'tastebridge:applied',requestId:e.data.requestId},location.origin);}
    catch(error){e.source.postMessage({type:'tastebridge:error',message:error.message},location.origin);}
   }
  });
@@ -1276,8 +1600,8 @@ function installBridge(controller){
  const schema={type:'object',properties:{a:{type:'array',items:{type:'string'},maxItems:5,uniqueItems:true},b:{type:'array',items:{type:'string'},maxItems:5,uniqueItems:true},mode:{type:'string',enum:['least-misery','average']}},required:['a','b'],additionalProperties:false};
  const tools=[
   {name:'read_tastebridge_session',title:'Read this book selection',description:'Read the current favorites, ranking method and sample recommendations.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute:()=>read()},
-  {name:'set_tastebridge_favorites',title:'Set both readers’ favorites',description:'Update up to five favorites per reader and reset previous choices.',inputSchema:schema,annotations:{readOnlyHint:false,untrustedContentHint:false},execute:input=>{controller.apply(validateSession(input));return read();}},
-  {name:'find_tastebridge_books',title:'Show five recommendations',description:'Show five sample recommendations and a reason for each reader after both choose five favorites.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:()=>{const s=read();if(s.a.length!==5||s.b.length!==5)throw new Error('Choose five books for each reader first.');controller.find();return read();}}
+  {name:'set_tastebridge_favorites',title:'Set both readers’ favorites',description:'Update up to five favorites per reader and reset previous choices.',inputSchema:schema,annotations:{readOnlyHint:false,untrustedContentHint:false},execute:async input=>{await controller.apply(validateSession(input));return read();}},
+  {name:'find_tastebridge_books',title:'Show five recommendations',description:'Show recommendations and a reason for each reader after both choose five favorites.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:async()=>{const s=read();if(s.a.length!==5||s.b.length!==5)throw new Error('Choose five books for each reader first.');await controller.find();return read();}}
  ];
  for(const tool of tools){try{Promise.resolve(context.registerTool(tool,{signal:lifecycle.signal})).catch(()=>{});}catch{}}
  window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
@@ -1290,8 +1614,9 @@ return { "installBridge": installBridge };
 __modules["desk-interactions.mjs"] = (() => {
 const { byId } = __modules["shared/engine.mjs"];
 
-function sampleFit(value){
+function sampleFit(value,{api=false}={}){
  const score=Number.isFinite(value)?value:0;
+ if(api)return {level:score>=.7?'strong':score>=.5?'some':'limited',label:`Similarity ${score.toFixed(2)}`,filled:score>=.7?3:score>=.5?2:score>0?1:0};
  if(score>=.7)return {level:'strong',label:'More sample overlap',filled:3};
  if(score>=.5)return {level:'some',label:'Some sample overlap',filled:2};
  return {level:'limited',label:score>0?'Limited sample overlap':'No sample overlap',filled:score>0?1:0};
@@ -1300,15 +1625,15 @@ function readerConnection(result,reader,favorites){
  const reason=result.reasons[reader],seed=byId(reason.seedId);
  if(!seed||!favorites.includes(seed.id))throw new Error('The reference must belong to this reader’s five favorites.');
  const sharedTags=reason.tags.filter(theme=>seed.tags.includes(theme)&&result.book.tags.includes(theme));
- return {seed,sharedTags,fit:sampleFit(reader==='a'?result.fitA:result.fitB)};
+ return {seed,sharedTags,fit:sampleFit(reader==='a'?result.fitA:result.fitB,{api:result.book.source==='api'})};
 }
 function themeFavorites(favorites,theme){return favorites.map(byId).filter(book=>book?.tags.includes(theme));}
 function favoriteReferences(results,id){
  return results.map(result=>({result,readers:['a','b'].filter(reader=>result.reasons[reader].seedId===id)})).filter(item=>item.readers.length);
 }
 function shortlistText(results,choice=null){
- if(results.length!==5)throw new Error('A shortlist needs exactly five recommendations.');
- const lines=['TasteBridge · sample shortlist','',...results.map((result,index)=>`${index+1}. ${result.book.title} — ${result.book.author}`)];
+ if(!results.length)throw new Error('Find some recommendations before sharing.');
+ const lines=['TasteBridge · demo shortlist','',...results.map((result,index)=>`${index+1}. ${result.book.title} — ${result.book.author}`)];
  const chosen=results.find(result=>result.book.id===choice);
  if(chosen)lines.push('',`Our next read: ${chosen.book.title} — ${chosen.book.author}`);
  return lines.join('\n');
@@ -1335,17 +1660,17 @@ const readerName=reader=>reader==='a'?'Reader 1':'Reader 2';
 function readingShelf(ids,reader){
  return Array.from({length:5},(_,index)=>{
   const book=byId(ids[index]);
-  return book?`<button class="seed-slot filled" data-remove="${book.id}" aria-label="Remove ${escape(book.title)} from ${readerName(reader)} favorites">${bookTile(book,{compact:true})}<span class="slot-remove">${svg('close')}</span></button>`:`<span class="seed-slot vacant" aria-label="Empty favorite slot ${index+1}"><span>${index+1}</span>${svg('plus')}</span>`;
+  return book?`<button class="seed-slot filled" data-remove="${escape(book.id)}" aria-label="Remove ${escape(book.title)} from ${readerName(reader)} favorites">${bookTile(book,{compact:true})}<span class="slot-remove">${svg('close')}</span></button>`:`<span class="seed-slot vacant" aria-label="Empty favorite slot ${index+1}"><span>${index+1}</span>${svg('plus')}</span>`;
  }).join('');
 }
 function catalogueSelection(book,a,b,reader){
  const current=reader==='a'?a:b,other=reader==='a'?b:a,selected=current.includes(book.id),otherSelected=other.includes(book.id);
  const otherReader=reader==='a'?'b':'a';
- return {selected,label:selected?'Selected':otherSelected?`${readerName(otherReader)} picked this`:book.kind==='mystery'?'Mystery':book.kind==='fantasy'?'Fantasy':'Fantasy / Mystery',ariaLabel:`${selected?'Remove':'Add'} ${book.title} ${selected?'from':'to'} ${readerName(reader)} favorites${otherSelected?`; also picked by ${readerName(otherReader)}`:''}`};
+ return {selected,label:selected?'Selected':otherSelected?`${readerName(otherReader)} picked this`:book.source==='api'?'Pick this book':book.kind==='mystery'?'Mystery':book.kind==='fantasy'?'Fantasy':'Fantasy / Mystery',ariaLabel:`${selected?'Remove':'Add'} ${book.title} ${selected?'from':'to'} ${readerName(reader)} favorites${otherSelected?`; also picked by ${readerName(otherReader)}`:''}`};
 }
 function readerEvidenceHTML(result,reader,favorites,exploration,{includeReason=true}={}){
  const connection=readerConnection(result,reader,favorites),fit=connection.fit;
- return `<section class="reader-evidence reader-${reader}" aria-label="Evidence for ${readerName(reader)}">${includeReason?reasonHTML(result,reader):''}<button class="evidence-seed" data-seed="${connection.seed.id}" data-reader="${reader}"><span>From your five</span><strong>${escape(connection.seed.title)}</strong><span aria-hidden="true">↗</span></button><div class="evidence-tags">${connection.sharedTags.map(theme=>`<button data-theme="${escape(theme)}" data-reader="${reader}" aria-pressed="${exploration?.kind==='theme'&&exploration.reader===reader&&exploration.theme===theme}">${escape(theme)}</button>`).join('')}</div><div class="reader-fit" data-fit="${fit.level}"><span class="fit-label">${fit.label}</span><span class="fit-track" aria-hidden="true">${Array.from({length:3},(_,index)=>`<i class="${index<fit.filled?'active':''}"></i>`).join('')}</span><small>Approximate sample-theme fit</small></div></section>`;
+ return `<section class="reader-evidence reader-${reader}" aria-label="Evidence for ${readerName(reader)}">${includeReason?reasonHTML(result,reader):''}<button class="evidence-seed" data-seed="${escape(connection.seed.id)}" data-reader="${reader}"><span>From your five</span><strong>${escape(connection.seed.title)}</strong><span aria-hidden="true">↗</span></button><div class="evidence-tags">${connection.sharedTags.map(theme=>`<button data-theme="${escape(theme)}" data-reader="${reader}" aria-pressed="${exploration?.kind==='theme'&&exploration.reader===reader&&exploration.theme===theme}">${escape(theme)}</button>`).join('')}</div><div class="reader-fit" data-fit="${fit.level}"><span class="fit-label">${fit.label}</span><span class="fit-track" aria-hidden="true">${Array.from({length:3},(_,index)=>`<i class="${index<fit.filled?'active':''}"></i>`).join('')}</span><small>${result.book.source==='api'?'Model similarity':'Approximate sample-theme fit'}</small></div></section>`;
 }
 
 return { "readerName": readerName, "readingShelf": readingShelf, "catalogueSelection": catalogueSelection, "readerEvidenceHTML": readerEvidenceHTML };
@@ -1354,6 +1679,10 @@ return { "readerName": readerName, "readingShelf": readingShelf, "catalogueSelec
 // Source: app.mjs
 __modules["app.mjs"] = (() => {
 const { CATALOG, DEMO, byId, recommend, sessionFromURL, seedQuery } = __modules["shared/engine.mjs"];
+
+const { enableApiCatalogue } = __modules["shared/catalog.mjs"];
+
+const { ApiDesk, API_SAMPLE } = __modules["desk-api.mjs"];
 
 const { $, $$, escape, brand, svg, bookTile, reasonHTML, bindDialog, toast, makeRecorder } = __modules["shared/ui.mjs"];
 
@@ -1370,8 +1699,14 @@ const { readingShelf, readerName, catalogueSelection, readerEvidenceHTML } = __m
 const { themeFavorites, favoriteReferences, shortlistText, copyShortlistText, sampleFit } = __modules["desk-interactions.mjs"];
 
 document.documentElement.dataset.embedded=String(window.parent!==window);
-const input=sessionFromURL();
-const state={...input,reader:'a',stage:'select',query:'',filter:'all',mode:input.mode,results:[],selected:null,votes:{},choice:null,deferred:false,undo:null,handoff:'',exploration:null,samplePair:false};
+const apiMode=new URLSearchParams(location.search).get('api')==='1';
+if(apiMode)enableApiCatalogue();
+const api=apiMode&&/^https?:$/.test(location.protocol)?new ApiDesk(new URL('/api',location.href).href):null;
+const apiConnection={pending:apiMode,health:null,error:''};
+const input=sessionFromURL({api:apiMode});
+const findData=(attribute,value,root=document)=>$$(`[${attribute}]`,root).find(node=>node.getAttribute(attribute)===value)||null;
+let searchTimer,connectionEpoch=0;
+const state={...input,reader:'a',stage:'select',query:'',filter:'all',mode:input.mode,results:[],selected:null,votes:{},choice:null,deferred:false,undo:null,handoff:'',exploration:null,samplePair:false,pending:false,picking:false,searchBusy:false,searchError:'',searchResults:[],requestError:'',requestedMode:input.mode,galaxy:null,topShelves:null,modelVersion:null,feedback:{}};
 const recorder=makeRecorder('reading-desk');
 const seenReveals=new Set();
 const compactViewport=matchMedia('(max-width: 760px)');
@@ -1380,10 +1715,44 @@ let shelvesOpen=!compactViewport.matches;
 let resultMap,pageObserver,detailObserver,lastDetailTrigger,explorerTrigger,shelfObserver,sampleTrigger;
 let detailMode='recommendation';
 compactViewport.addEventListener('change',event=>{shelvesOpen=!event.matches;const shelves=$('#selected-shelves');if(shelves)shelves.open=shelvesOpen;});
-if(state.a.length===5&&state.b.length===5){state.stage='results';state.results=recommend(state.a,state.b,state.mode);state.selected=state.results[0].book.id;}
+if(!apiMode&&state.a.length===5&&state.b.length===5){state.stage='results';state.results=recommend(state.a,state.b,state.mode);state.selected=state.results[0].book.id;}
 
-function header(){return `<header class="site-header"><a class="brand" href="/a/?v=20261008.2" aria-label="TasteBridge home">${brand}</a><nav class="site-nav" aria-label="Main navigation"><button id="nav-select" class="${state.stage==='select'?'active':''}">Pick books</button><button id="nav-results" class="${state.stage==='results'?'active':''}">Recommendations</button><a class="project-link" href="/project/">Project</a></nav><a id="other-version" class="other-version" href="/b/?v=20261008.2&${seedQuery(state.a,state.b,state.mode)}">View version B <span aria-hidden="true">↗</span></a></header>`;}
-function footer(){return `<footer class="footer-line"><span>Frontend prototype · ${CATALOG.length} sample books</span><a class="project-link" href="/project/">About the project ↗</a></footer>`;}
+function header(){return `<header class="site-header"><a class="brand" href="/a/?v=20261012.1&api=${apiMode?1:0}" aria-label="TasteBridge home">${brand}</a><nav class="site-nav" aria-label="Main navigation"><button id="nav-select" class="${state.stage==='select'?'active':''}">Pick books</button><button id="nav-results" class="${state.stage==='results'?'active':''}">Recommendations</button><a class="project-link" href="/project/">Project</a></nav><a id="other-version" class="other-version" href="/b/?v=20261012.1&${apiMode?'':seedQuery(state.a,state.b,state.mode)}">View version B <span aria-hidden="true">↗</span></a></header>`;}
+function footer(){return `<footer class="footer-line"><span>${apiMode?`Connected demo · ${apiConnection.health?.numBooks??'…'} books${apiConnection.health?.modelVersion==='sample-shelf-toy-v1'?' · Sample model':''}`:`Frontend prototype · ${CATALOG.length} sample books`}</span>${apiMode?'<div class="footer-actions"><a class="project-link" href="/project/">About the project ↗</a><a href="/a/?api=0">Use offline demo ↗</a></div>':'<a class="project-link" href="/project/">About the project ↗</a>'}</footer>`;}
+function connectionHTML(){
+ if(!apiMode)return '';
+ if(apiConnection.pending)return '<div class="api-status" role="status"><span class="loading-dot" aria-hidden="true"></span>Connecting to the book catalogue…</div>';
+ if(apiConnection.error)return `<div class="api-status api-error" role="status"><p>${escape(apiConnection.error)}</p><button id="retry-api" class="secondary">Retry connection</button></div>`;
+ return '';
+}
+function requestStatusHTML(){
+ if(state.pending)return '<div class="api-status" role="status"><span class="loading-dot" aria-hidden="true"></span>Finding books for both of you…</div>';
+ return state.requestError?`<div class="api-status api-error" role="status"><p>${escape(state.requestError)}</p><button id="retry-recommend" class="secondary">Try again</button><button id="replace-picks" class="quiet">Change books</button></div>`:'';
+}
+function applyBusyState(){
+ const busy=apiConnection.pending||state.pending||state.picking;
+ $$('[data-book],[data-remove],[data-clear-reader],[data-reader],[data-filter],#undo-selection,#demo,#sample-inline,#pair-next').forEach(button=>{if(busy)button.disabled=true;});
+ $('#search')?.toggleAttribute('disabled',apiConnection.pending);
+ if($('#retry-api'))$('#retry-api').onclick=connectApi;
+ if($('#retry-recommend'))$('#retry-recommend').onclick=()=>showResults({mode:state.requestedMode});
+ if($('#replace-picks'))$('#replace-picks').onclick=editPicks;
+}
+async function connectApi(){
+ const epoch=++connectionEpoch;apiConnection.pending=true;apiConnection.error='';render();
+ try{
+  if(!api)throw new Error('Open the connected demo through the local app server.');
+  const health=await api.health();if(epoch!==connectionEpoch)return;
+  if(apiConnection.health&&apiConnection.health.modelVersion!==health.modelVersion){enableApiCatalogue();invalidateInput();}
+  apiConnection.health=health;
+  const ids=[...new Set([...state.a,...state.b])];
+  const metadata=await Promise.allSettled(ids.map(id=>api.book(id)));if(epoch!==connectionEpoch)return;
+  const missing=ids.filter((id,index)=>metadata[index].status==='rejected'&&metadata[index].reason?.status===404);
+  const failed=metadata.find(item=>item.status==='rejected'&&item.reason?.status!==404);if(failed)throw failed.reason;
+  if(missing.length){state.a=state.a.filter(id=>!missing.includes(id));state.b=state.b.filter(id=>!missing.includes(id));state.handoff='Some books in this link are unavailable. Your other favorites are kept.';}
+  apiConnection.pending=false;render();
+  if(state.a.length===5&&state.b.length===5)await showResults();
+ }catch(error){if(epoch!==connectionEpoch||error.name==='AbortError')return;apiConnection.pending=false;apiConnection.error=error.message;render();}
+}
 function revealItems(nodes,context,root=null){
  if(typeof IntersectionObserver!=='function'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
  const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting)continue;entry.target.classList.add('is-revealed');seenReveals.add(entry.target.dataset.revealKey);observer.unobserve(entry.target);}},{root,threshold:.08,rootMargin:'0px 0px 24px 0px'});
@@ -1392,8 +1761,8 @@ function revealItems(nodes,context,root=null){
 }
 function render(){
  pageObserver?.disconnect();detailObserver?.disconnect();shelfObserver?.disconnect();resultMap?.destroy();resultMap=null;
- $('#app').innerHTML=header()+`<main class="desk-main"><nav class="journey-progress" aria-label="Your shared reading journey">${journeyProgressHTML()}</nav>${state.stage==='select'?selectHTML():resultsHTML()}${footer()}</main><dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"><button class="close-dialog" aria-label="Close book details">${svg('close')}</button><div id="detail-body"></div></dialog><dialog id="sample-dialog" class="flow-dialog" aria-labelledby="sample-title"><h2 id="sample-title">Try a sample pair?</h2><p>This replaces the favorites you have chosen with an example pair for exploring the demo.</p><div class="flow-actions"><button id="keep-favorites" class="secondary">Keep my books</button><button id="use-sample-pair" class="primary">Use sample pair</button></div></dialog>`;
- $$('a.project-link').forEach(link=>link.addEventListener('click',()=>{link.href=`/project/?${seedQuery(state.a,state.b,state.mode)}`;}));
+ $('#app').innerHTML=header()+`<main class="desk-main"><nav class="journey-progress" aria-label="Your shared reading journey">${journeyProgressHTML()}</nav>${connectionHTML()}${requestStatusHTML()}${state.stage==='select'?selectHTML():resultsHTML()}${footer()}</main><dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"><button class="close-dialog" aria-label="Close book details">${svg('close')}</button><div id="detail-body"></div></dialog><dialog id="sample-dialog" class="flow-dialog" aria-labelledby="sample-title"><h2 id="sample-title">Try a sample pair?</h2><p>This replaces the favorites you have chosen with an example pair for exploring the demo.</p><div class="flow-actions"><button id="keep-favorites" class="secondary">Keep my books</button><button id="use-sample-pair" class="primary">Use sample pair</button></div></dialog>`;
+ $$('a.project-link').forEach(link=>link.addEventListener('click',()=>{link.href=`/project/?${seedQuery(state.a,state.b,state.mode,{api:apiMode})}`;}));
  $('#nav-select').onclick=editPicks;
  $('#nav-results').onclick=()=>{if(state.a.length!==5||state.b.length!==5){toast('Each reader needs 5 books.');return;}showResults();};
  const dialog=$('#detail-dialog');bindDialog(dialog);$('.close-dialog').onclick=()=>dialog.close();
@@ -1403,7 +1772,7 @@ function render(){
  bindJourneyProgress();
  const sampleDialog=$('#sample-dialog');bindDialog(sampleDialog);$('#keep-favorites').onclick=()=>sampleDialog.close();$('#use-sample-pair').onclick=loadSamplePair;sampleDialog.addEventListener('close',()=>{if(sampleTrigger?.isConnected)sampleTrigger.focus({preventScroll:true});});
  if(state.stage==='select')bindSelect();else bindResults();
- trackShelfHeight();
+ trackShelfHeight();applyBusyState();
 }
 function journeyProgressHTML(){
  const current=state.stage==='results'?'results':state.reader;
@@ -1422,22 +1791,31 @@ function requestSamplePair(trigger){
  if(state.a.length||state.b.length){sampleTrigger=trigger;$('#sample-dialog').showModal();$('#keep-favorites').focus();return;}
  loadSamplePair();
 }
-function loadSamplePair(){
- state.a=[...DEMO.a];state.b=[...DEMO.b];state.samplePair=true;state.undo=null;state.exploration=null;state.handoff='';clearDecision(state);recorder.record('use_demo');showResults();
+async function loadSamplePair(){
+ if(apiMode){
+  if(apiConnection.health?.modelVersion!=='sample-shelf-toy-v1')return;
+  state.picking=true;state.searchError='';render();
+  try{await api.favorites(API_SAMPLE.a,API_SAMPLE.b);}
+  catch(error){if(error.name==='AbortError')return;state.picking=false;state.searchError=error.message;render();return;}
+  state.picking=false;
+ }
+ const sample=apiMode?API_SAMPLE:DEMO;
+ state.a=[...sample.a];state.b=[...sample.b];state.samplePair=true;state.undo=null;state.exploration=null;state.handoff='';clearDecision(state);recorder.record('use_demo');await showResults();
 }
 
 function titleFocus(){$('#page-title')?.focus({preventScroll:true});}
-function editPicks(){state.stage='select';state.query='';state.filter='all';state.exploration=null;render();titleFocus();}
+function editPicks(){api?.requests.cancel('recommend');api?.requests.cancel('search');api?.requests.cancel('favorites');api?.requests.cancel('pick');state.picking=false;clearTimeout(searchTimer);state.pending=false;state.requestError='';state.stage='select';state.query='';state.searchResults=[];state.searchBusy=false;state.searchError='';state.filter='all';state.exploration=null;render();titleFocus();}
 function selectionStatus(){if(state.a.length===5&&state.b.length===5)return 'Both sets are ready. Explore your five recommendations.';const count=state[state.reader].length;return count===5?`${readerName(state.reader)}’s five are ready.`:`${readerName(state.reader)} · Choose ${5-count} more ${count===4?'book':'books'}.`;}
 
 function continueLabel(){if(state.a.length===5&&state.b.length===5)return 'Explore 5 recommendations';if(state[state.reader].length<5){const remaining=5-state[state.reader].length;return `Choose ${remaining} more ${remaining===1?'book':'books'}`;}return `Continue to ${readerName(state.reader==='a'?'b':'a')}`;}
 
 function readerShelfHTML(reader){return `<section class="reader-summary reader-${reader} ${state.reader===reader?'active':''}"><div class="summary-head"><strong>${readerName(reader)} <span>${state[reader].length}/5</span></strong><button data-reader="${reader}" aria-label="Edit ${readerName(reader)} favorites">${state.reader===reader?'Editing':'Edit'}</button></div><div class="seed-slots">${readingShelf(state[reader],reader)}</div><div class="shelf-actions"><button class="quiet" data-clear-reader="${reader}" ${state[reader].length?'':'disabled'}>Clear ${readerName(reader)}</button></div></section>`;}
-function selectHTML(){return `<section class="intro"><div><h1 id="page-title" tabindex="-1">Find your next <em>read together.</em></h1><p>Start with books you love. Find one to read together.</p></div><button id="demo" class="sample-button">Try a sample pair <span aria-hidden="true">↗</span></button></section><div class="desk-workspace"><section class="catalogue reader-${state.reader}" aria-labelledby="pick-title"><div class="section-top"><h2 id="pick-title">Pick your favorites</h2><div class="reader-tabs" role="group" aria-label="Reader choosing books">${['a','b'].map(reader=>`<button class="reader-${reader} ${state.reader===reader?'active':''}" data-reader="${reader}" aria-pressed="${state.reader===reader}">${readerName(reader)} <span>${state[reader].length}/5</span></button>`).join('')}</div></div><p id="selection-status" class="selection-status" role="status">${selectionStatus()}</p><p id="handoff-note" class="handoff-note" role="status">${escape(state.handoff)}</p><label class="search-field">${svg('search')}<span class="sr-only">Search by book title or author</span><input id="search" type="search" placeholder="Search titles or authors" autocomplete="off" value="${escape(state.query)}"></label><p class="demo-scope-note">23-book sample catalogue. Missing a favorite? <button id="sample-inline" class="quiet">Try a sample pair</button></p><div class="catalogue-toolbar"><div class="filter-list" role="group" aria-label="Book category">${[['all','All books'],['fantasy','Fantasy'],['mystery','Mystery'],['bridge','Fantasy & mystery']].map(([id,name])=>`<button data-filter="${id}" class="${state.filter===id?'active':''}" aria-pressed="${state.filter===id}">${name}</button>`).join('')}</div><span id="catalogue-count" class="catalogue-count"></span></div><p id="catalogue-feedback" role="status"></p><div id="book-grid" class="book-grid"></div></section><aside class="pair-panel" aria-label="Selected favorites"><details id="selected-shelves" class="shelf-disclosure" ${shelvesOpen?'open':''}><summary><span>Your books</span><span class="shelf-counts">${shelfCountsHTML()}</span></summary><div class="shelf-content">${['a','b'].map(readerShelfHTML).join('')}<button id="undo-selection" class="quiet" ${state.undo?'':'hidden'}>Undo last change</button></div></details><button id="pair-next" class="pair-next" ${state[state.reader].length<5?'disabled':''}>${continueLabel()} <span aria-hidden="true">→</span></button></aside></div>`;}
+function selectHTML(){return `<section class="intro"><div><h1 id="page-title" tabindex="-1">Find your next <em>read together.</em></h1><p>Start with books you love. Find one to read together.</p></div><button id="demo" class="sample-button" ${apiMode&&apiConnection.health?.modelVersion!=='sample-shelf-toy-v1'?'hidden':''}>Try a sample pair <span aria-hidden="true">↗</span></button></section><div class="desk-workspace"><section class="catalogue reader-${state.reader}" aria-labelledby="pick-title"><div class="section-top"><h2 id="pick-title">Pick your favorites</h2><div class="reader-tabs" role="group" aria-label="Reader choosing books">${['a','b'].map(reader=>`<button class="reader-${reader} ${state.reader===reader?'active':''}" data-reader="${reader}" aria-pressed="${state.reader===reader}">${readerName(reader)} <span>${state[reader].length}/5</span></button>`).join('')}</div></div><p id="selection-status" class="selection-status" role="status">${selectionStatus()}</p><p id="handoff-note" class="handoff-note" role="status">${escape(state.handoff)}</p><label class="search-field">${svg('search')}<span class="sr-only">Search by book title or author</span><input id="search" maxlength="100" type="search" placeholder="Search titles or authors" autocomplete="off" value="${escape(state.query)}"></label><p class="demo-scope-note">${apiMode?'Search the connected catalogue by title or author.':'23-book sample catalogue. Missing a favorite?'} <button id="sample-inline" class="quiet" ${apiMode&&apiConnection.health?.modelVersion!=='sample-shelf-toy-v1'?'hidden':''}>Try a sample pair</button></p><div class="catalogue-toolbar"><div class="filter-list" role="group" aria-label="Book category" ${apiMode?'hidden':''}>${[['all','All books'],['fantasy','Fantasy'],['mystery','Mystery'],['bridge','Fantasy & mystery']].map(([id,name])=>`<button data-filter="${id}" class="${state.filter===id?'active':''}" aria-pressed="${state.filter===id}">${name}</button>`).join('')}</div><span id="catalogue-count" class="catalogue-count"></span></div><p id="catalogue-feedback" role="status"></p><div id="book-grid" class="book-grid"></div></section><aside class="pair-panel" aria-label="Selected favorites"><details id="selected-shelves" class="shelf-disclosure" ${shelvesOpen?'open':''}><summary><span>Your books</span><span class="shelf-counts">${shelfCountsHTML()}</span></summary><div class="shelf-content">${['a','b'].map(readerShelfHTML).join('')}<button id="undo-selection" class="quiet" ${state.undo?'':'hidden'}>Undo last change</button></div></details><button id="pair-next" class="pair-next" ${state[state.reader].length<5?'disabled':''}>${continueLabel()} <span aria-hidden="true">→</span></button></aside></div>`;}
 function shelfCountsHTML(){return ['a','b'].map((reader,index)=>`<span aria-label="${readerName(reader)} ${state[reader].length} of 5 books"><i aria-hidden="true">${index+1}</i>${state[reader].length}/5</span>`).join('');}
-function bookPickHTML(book){const view=catalogueSelection(book,state.a,state.b,state.reader);return `<button class="book-pick ${view.selected?'is-picked':''}" data-book="${book.id}" aria-label="${escape(view.ariaLabel)}" aria-pressed="${view.selected}">${bookTile(book,{selected:view.selected})}<span class="book-pick-note">${escape(view.label)}</span></button>`;}
+function bookPickHTML(book){const view=catalogueSelection(book,state.a,state.b,state.reader);return `<button class="book-pick ${view.selected?'is-picked':''}" data-book="${escape(book.id)}" aria-label="${escape(view.ariaLabel)}" aria-pressed="${view.selected}">${bookTile(book,{selected:view.selected})}<span class="book-pick-note">${escape(view.label)}</span></button>`;}
 function renderBooks(){
  pageObserver?.disconnect();
+ if(apiMode){renderApiBooks();return;}
  const books=CATALOG.filter(book=>(state.filter==='all'||book.kind===state.filter)&&`${book.title} ${book.author}`.toLowerCase().includes(state.query.toLowerCase().trim()));
  $('#catalogue-count').textContent=`${books.length} ${books.length===1?'book':'books'}`;
  const category={fantasy:'Fantasy',mystery:'Mystery',bridge:'Fantasy / Mystery'}[state.filter],query=state.query.trim();
@@ -1447,6 +1825,23 @@ function renderBooks(){
  $('#clear-search')?.addEventListener('click',()=>{state.query='';state.filter='all';$('#search').value='';syncFilters();renderBooks();$('#search').focus({preventScroll:true});});
  $('#empty-sample')?.addEventListener('click',event=>requestSamplePair(event.currentTarget));
  pageObserver=revealItems($$('[data-book]'),'catalogue');
+}
+function renderApiBooks(){
+ const grid=$('#book-grid');if(!grid)return;
+ const books=state.searchResults;
+ $('#catalogue-count').textContent=state.query.trim()?`${books.length} ${books.length===1?'match':'matches'}${books.length===25?' shown':''}`:'';
+ $('#catalogue-feedback').textContent=state.picking?'Adding your favorite…':'';
+ grid.setAttribute('aria-busy',String(state.searchBusy));
+ grid.innerHTML=state.searchBusy?'<div class="empty-message" role="status"><span class="loading-dot" aria-hidden="true"></span> Searching the catalogue…</div>':state.searchError?`<div class="empty-message api-error" role="status"><p>${escape(state.searchError)}</p><button id="retry-search" class="secondary">Retry search</button></div>`:books.length?books.map(bookPickHTML).join(''):state.query.trim()?'<div class="empty-message"><p>No books match that title or author.</p><button id="clear-search" class="secondary">Clear search</button></div>':'<div class="empty-message"><p>Search for a book you love, or try a sample pair.</p></div>';
+ $$('[data-book]').forEach(button=>{button.disabled=state.picking||apiConnection.pending;button.onclick=()=>toggleBook(button.dataset.book);});
+ $('#retry-search')?.addEventListener('click',performSearch);
+ $('#clear-search')?.addEventListener('click',()=>{api.requests.cancel('search');state.query='';state.searchResults=[];state.searchError='';$('#search').value='';renderApiBooks();$('#search').focus();});
+ pageObserver=revealItems($$('[data-book]'),'api-catalogue');
+}
+async function performSearch(){
+ const query=state.query;state.searchBusy=true;state.searchError='';renderApiBooks();
+ try{const books=await api.search(query);if(state.stage!=='select'||query!==state.query)return;state.searchResults=books;state.searchBusy=false;renderApiBooks();}
+ catch(error){if(error.name==='AbortError')return;if(query!==state.query||state.stage!=='select')return;state.searchBusy=false;state.searchError=error.message;renderApiBooks();}
 }
 function syncFilters(){$$('[data-filter]').forEach(button=>{button.classList.toggle('active',button.dataset.filter===state.filter);button.setAttribute('aria-pressed',String(button.dataset.filter===state.filter));});}
 function syncCatalogueSelection(){
@@ -1463,7 +1858,7 @@ function syncSelectionChrome(){
  ['a','b'].forEach(reader=>{const summary=$(`.reader-summary.reader-${reader}`);summary.classList.toggle('active',state.reader===reader);$('.summary-head strong',summary).innerHTML=`${readerName(reader)} <span>${state[reader].length}/5</span>`;$('[data-clear-reader]',summary).disabled=state[reader].length===0;});
  $('.shelf-counts').innerHTML=shelfCountsHTML();$('#selection-status').textContent=selectionStatus();$('#handoff-note').textContent=state.handoff;
  $('#pair-next').disabled=state[state.reader].length<5;$('#pair-next').innerHTML=`${continueLabel()} <span aria-hidden="true">→</span>`;$('#undo-selection').hidden=!state.undo;
- $('#other-version').href=`/b/?v=20261008.2&${seedQuery(state.a,state.b,state.mode)}`;
+ $('#other-version').href=`/b/?v=20261012.1&${apiMode?'':seedQuery(state.a,state.b,state.mode)}`;
 }
 function updateShelf(reader){const summary=$(`.reader-summary.reader-${reader}`);$('.seed-slots',summary).innerHTML=readingShelf(state[reader],reader);bindShelf(summary);}
 function motionHook(node,name,duration=450){
@@ -1480,7 +1875,7 @@ function switchReader(reader,{handoff=false}={}){
 function bindShelf(container){
  $$('[data-remove]',container).forEach(button=>button.onclick=()=>{
   const reader=button.closest('.reader-summary').classList.contains('reader-a')?'a':'b',id=button.dataset.remove,index=state[reader].indexOf(id);
-  changeFavorites(reader,state[reader].filter(bookId=>bookId!==id));motionHook($(`[data-book="${id}"]`),'just-removed');
+  changeFavorites(reader,state[reader].filter(bookId=>bookId!==id));motionHook(findData('data-book',id),'just-removed');
   const remaining=$$(`.reader-summary.reader-${reader} [data-remove]`);(remaining[Math.min(index,remaining.length-1)]||$(`.reader-summary.reader-${reader} [data-reader]`))?.focus({preventScroll:true});recorder.record('remove_seed',{reader});
  });
  const clear=$('[data-clear-reader]',container);if(clear)clear.onclick=()=>{const reader=container.classList.contains('reader-a')?'a':'b';if(!state[reader].length)return;changeFavorites(reader,[]);toast(`${readerName(reader)} cleared. Undo is available.`);};
@@ -1488,7 +1883,7 @@ function bindShelf(container){
 function bindSelect(){
  renderBooks();
  const shelves=$('#selected-shelves');shelves.addEventListener('toggle',()=>{if(shelves.isConnected)shelvesOpen=shelves.open;});
- $('#search').addEventListener('input',event=>{state.query=event.target.value;renderBooks();});
+ $('#search').addEventListener('input',event=>{state.query=event.target.value;if(!apiMode){renderBooks();return;}api.requests.cancel('search');clearTimeout(searchTimer);state.searchResults=[];state.searchError='';state.searchBusy=Boolean(state.query.trim());renderApiBooks();if(state.query.trim())searchTimer=setTimeout(performSearch,180);});
  $$('[data-reader]').forEach(button=>button.onclick=()=>switchReader(button.dataset.reader));
  $$('[data-filter]').forEach(button=>button.onclick=()=>{state.filter=button.dataset.filter;syncFilters();renderBooks();});
  $$('.reader-summary').forEach(bindShelf);
@@ -1496,19 +1891,50 @@ function bindSelect(){
  $('#pair-next').onclick=()=>{if(state.a.length===5&&state.b.length===5)showResults();else switchReader(state.reader==='a'?'b':'a',{handoff:true});};
  $('#demo').onclick=event=>requestSamplePair(event.currentTarget);$('#sample-inline').onclick=event=>requestSamplePair(event.currentTarget);
 }
-function invalidateInput(){state.samplePair=false;clearDecision(state);state.results=[];state.selected=null;state.exploration=null;}
+function invalidateInput(){api?.requests.cancel('recommend');state.pending=false;state.requestError='';state.samplePair=false;clearDecision(state);state.results=[];state.selected=null;state.exploration=null;state.galaxy=null;state.topShelves=null;}
 function changeFavorites(reader,ids){state.undo={reader,before:[...state[reader]]};state[reader]=[...ids];state.handoff='';invalidateInput();updateShelf(reader);syncSelectionChrome();syncCatalogueSelection();}
-function toggleBook(id){
+async function toggleBook(id){
+ if(state.picking)return;
  const ids=state[state.reader],wasSelected=ids.includes(id);
+ if(apiMode&&!wasSelected){
+  if(ids.length>=5){toast('You picked 5 books. Remove one to choose another.');return;}
+  const reader=state.reader;state.picking=true;renderApiBooks();applyBusyState();
+  try{await api.requests.run('pick',signal=>api.book(id,{signal}));}catch(error){if(error.name==='AbortError')return;state.picking=false;state.searchError=error.message;render();return;}
+  state.picking=false;if(state.reader!==reader)return;render();
+ }
  if(!wasSelected&&ids.length>=5){toast('You picked 5 books. Remove one to choose another.');return;}
  changeFavorites(state.reader,wasSelected?ids.filter(bookId=>bookId!==id):[...ids,id]);
- motionHook($(`[data-book="${id}"]`),wasSelected?'just-removed':'just-added');
- if(!wasSelected)motionHook($(`.reader-summary.reader-${state.reader} [data-remove="${id}"]`),'just-added');
+ motionHook(findData('data-book',id),wasSelected?'just-removed':'just-added');
+ if(!wasSelected)motionHook(findData('data-remove',id,$(`.reader-summary.reader-${state.reader}`)),'just-added');
+ if(apiMode)findData('data-book',id)?.focus({preventScroll:true});
  recorder.record(wasSelected?'remove_seed':'add_seed',{reader:state.reader,count:state[state.reader].length});
 }
-function showResults(){state.results=recommend(state.a,state.b,state.mode);state.selected=state.results[0].book.id;state.stage='results';state.query='';state.exploration=null;recorder.record('show_results',{aggregation:state.mode});render();window.scrollTo({top:0,behavior:'instant'});titleFocus();}
-function resultsHTML(){return `<section class="result-top"><div><h1 id="page-title" tabindex="-1">Five books. <em>One shared read.</em></h1><p>Compare the reasons for each of you, then choose together.</p></div><div class="result-actions"><button id="open-galaxy" class="secondary">${svg('map')}Taste galaxy</button><details class="shortlist-options" id="shortlist-options"><summary>Share shortlist</summary><div><button id="copy-shortlist" class="secondary">Copy titles</button><button id="show-shortlist" class="quiet">Show text to copy</button></div></details><button id="edit-picks" class="secondary">Change books</button></div></section>${state.samplePair?'<p class="sample-pair-note">Example pair · These favorites are a sample, not your reading history.</p>':''}<p id="copy-status" class="sr-only" role="status"></p><section id="copy-fallback" class="copy-fallback" hidden aria-label="Manual shortlist copy"><p id="copy-help">Select this text and copy it.</p><textarea id="shortlist-text" readonly rows="8" aria-label="Shortlist text to copy"></textarea><div><button id="select-copy-text" class="secondary">Select text</button><button id="close-copy-fallback" class="quiet">Close</button></div></section><div id="decision-panel"></div><section class="results-layout" aria-label="Five recommendations"><div class="mode-control"><label for="aggregation">Rank by</label><select id="aggregation"><option value="least-misery" ${state.mode==='least-misery'?'selected':''}>Lower reader match</option><option value="average" ${state.mode==='average'?'selected':''}>Average reader match</option></select></div><p class="ranking-note" id="ranking-note" role="status">${rankingNote()}</p><div id="result-list" class="result-list"></div></section><details id="taste-map-panel" class="taste-map-disclosure"><summary>Taste galaxy</summary><p class="demo-scope-note">The map and ranking use the same sample themes. The 2D projection is approximate.</p><div class="galaxy-panel"><div class="map-legend"><span><i></i>Reader 1</span><span><i></i>Reader 2</span><span><i></i>Recommendations</span></div><div id="large-map" class="large-map"></div><div id="map-selected" class="map-selected"></div></div></details>`;}
-function rankingNote(){return `${state.mode==='average'?'Ordered by the average of both readers’ sample matches.':'Ordered by the lower of the two readers’ sample matches.'} Interests stay with books that remain in the shortlist.`;}
+async function showResults({mode=state.mode,rerank=false}={}){
+ if(state.picking||apiConnection.pending)return;
+ if(state.a.length!==5||state.b.length!==5){toast('Each reader needs 5 books.');return;}
+ const previous=new Map($$('.result-card[data-result]').map(card=>[card.dataset.result,card.getBoundingClientRect()]));
+ if(!apiMode){
+  const next=recommend(state.a,state.b,mode);
+  if(rerank)reconcileRanking(state,next,mode);else{state.results=next;state.selected=next[0]?.book.id??null;}
+ }else{
+  state.pending=true;state.requestError='';state.requestedMode=mode;render();
+  try{
+   const reply=await api.recommend([...state.a],[...state.b],mode);
+   const summary=reconcileRanking(state,reply.results,reply.mode);
+   state.galaxy=reply.galaxy;state.topShelves=reply.topShelves;state.modelVersion=reply.modelVersion;
+   if(rerank&&summary.choiceChanged)toast('The shortlist changed. Your previous choice is no longer available.');
+  }catch(error){
+   if(error.name==='AbortError')return;
+   state.pending=false;state.requestError=error.status===404?`${error.message} Change books to replace unavailable favorites.`:rerank?`${error.message} Your previous shortlist is kept.`:error.message;render();return;
+  }
+  state.pending=false;
+ }
+ state.stage='results';state.query='';state.searchResults=[];state.exploration=null;recorder.record('show_results',{aggregation:state.mode});render();
+ if(rerank){animateRanking(previous);$('#aggregation').focus({preventScroll:true});}else{window.scrollTo({top:0,behavior:'instant'});titleFocus();}
+}
+
+function resultsHTML(){return `<section class="result-top"><div><h1 id="page-title" tabindex="-1">${state.results.length===5?'Five books. <em>One shared read.</em>':'Find your next <em>read together.</em>'}</h1><p>Compare the reasons for each of you, then choose together.</p></div><div class="result-actions"><button id="open-galaxy" class="secondary" ${state.pending||!state.results.length?'disabled':''}>${svg('map')}Taste galaxy</button><details class="shortlist-options" id="shortlist-options"><summary>Share shortlist</summary><div><button id="copy-shortlist" class="secondary" ${state.pending||!state.results.length?'disabled':''}>Copy titles</button><button id="show-shortlist" class="quiet" ${state.pending||!state.results.length?'disabled':''}>Show text to copy</button></div></details><button id="edit-picks" class="secondary">Change books</button></div></section>${state.samplePair?'<p class="sample-pair-note">Example pair · These favorites are a sample, not your reading history.</p>':''}<p id="copy-status" class="sr-only" role="status"></p><section id="copy-fallback" class="copy-fallback" hidden aria-label="Manual shortlist copy"><p id="copy-help">Select this text and copy it.</p><textarea id="shortlist-text" readonly rows="8" aria-label="Shortlist text to copy"></textarea><div><button id="select-copy-text" class="secondary">Select text</button><button id="close-copy-fallback" class="quiet">Close</button></div></section>${state.topShelves?`<div class="reader-taste-summary">${['a','b'].map(reader=>`<p class="reader-${reader}"><strong>${readerName(reader)}</strong><span>${state.topShelves[reader].map(escape).join(' · ')}</span></p>`).join('')}</div>`:''}<div id="decision-panel"></div><section class="results-layout" aria-label="Recommendations" aria-busy="${state.pending}"><div class="mode-control"><label for="aggregation">Rank by</label><select id="aggregation" ${state.pending?'disabled':''}><option value="least-misery" ${state.mode==='least-misery'?'selected':''}>Lower reader match</option><option value="average" ${state.mode==='average'?'selected':''}>Average reader match</option></select></div><p class="ranking-note" id="ranking-note" role="status">${rankingNote()}</p><div id="result-list" class="result-list"></div></section><details id="taste-map-panel" class="taste-map-disclosure" ${state.pending||!state.results.length?'hidden':''}><summary>Taste galaxy</summary><p class="demo-scope-note">${apiMode?'Map positions come from the connected sample model. Nearby stars show related books.':'The map and ranking use the same sample themes. The 2D projection is approximate.'}</p><div class="galaxy-panel"><div class="map-legend"><span><i></i>Reader 1</span><span><i></i>Reader 2</span><span><i></i>Recommendations</span></div><div id="large-map" class="large-map"></div><div id="map-selected" class="map-selected"></div></div></details>`;}
+function rankingNote(){return `${state.mode==='average'?'Ordered by the average of both readers’ matches.':'Ordered by the lower of the two readers’ matches.'} Interests stay with books that remain in the shortlist.`;}
 function animateRanking(previous){
  if(matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('reduce-motion'))return;
  $$('.result-card[data-result]').forEach(card=>{const before=previous.get(card.dataset.result),after=card.getBoundingClientRect();if(!before||Math.abs(before.top-after.top)<1||before.bottom<0&&after.bottom<0||before.top>innerHeight&&after.top>innerHeight||typeof card.animate!=='function')return;card.animate([{transform:`translateY(${before.top-after.top}px)`},{transform:'translateY(0)'}],{duration:460,easing:'cubic-bezier(.22,1,.36,1)'});});
@@ -1516,9 +1942,9 @@ function animateRanking(previous){
 
 function bindResults(){
  $('#edit-picks').onclick=editPicks;
- $('#aggregation').onchange=event=>{const previous=new Map($$('.result-card[data-result]').map(card=>[card.dataset.result,card.getBoundingClientRect()])),mode=event.target.value,summary=reconcileRanking(state,recommend(state.a,state.b,mode),mode);state.exploration=null;$('#ranking-note').textContent=rankingNote();renderResultsContent();animateRanking(previous);recorder.record('change_aggregation',{aggregation:state.mode});toast(summary.choiceChanged?'The shortlist changed. Your previous choice is no longer available.':summary.removedVoteCount?'Shortlist updated. Interests are kept for the books still here.':'Order updated. Your interests are kept.');};
+ $('#aggregation').onchange=event=>showResults({mode:event.target.value,rerank:true});
  resultMap=new DeskGalaxy($('#large-map'),{onSelect:id=>openDetail(id,{kind:'map',id}),onFavorite:id=>openFavorite(id,{kind:'favorite-map',id})});
- $('#open-galaxy').onclick=()=>{const panel=$('#taste-map-panel');panel.open=true;resultMap.update(state.a,state.b,state.results,state.selected);panel.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});$('summary',panel).focus({preventScroll:true});};
+ $('#open-galaxy').onclick=()=>{const panel=$('#taste-map-panel');panel.open=true;resultMap.update(state.a,state.b,state.results,state.selected,state.galaxy);panel.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});$('summary',panel).focus({preventScroll:true});};
  $('#copy-shortlist').onclick=async()=>{
   const status=$('#copy-status'),text=shortlistText(state.results,state.choice),copied=await copyShortlistText(text);
   if(!status.isConnected||$('#copy-status')!==status||state.stage!=='results')return;
@@ -1540,36 +1966,52 @@ function showShortlistText(failed=false){
 }
 function decisionHTML(){
  const choice=state.results.find(result=>result.book.id===state.choice),count=state.results.filter(result=>bothWilling(state.votes[result.book.id])).length;
- if(choice)return `<section class="decision-strip confirmed" aria-labelledby="decision-heading"><div class="decision-copy"><h2 id="decision-heading" tabindex="-1">Your next read</h2><p><strong>${escape(choice.book.title)}</strong><span>${escape(choice.book.author)}</span></p></div><div class="decision-actions"><button id="review-choice" class="primary">View reasons</button><button id="revoke-choice" class="secondary">Undo choice</button></div></section>`;
+ if(choice)return `<section class="decision-strip confirmed" aria-labelledby="decision-heading"><div class="decision-copy"><h2 id="decision-heading" tabindex="-1">Your next read</h2><p><strong>${escape(choice.book.title)}</strong><span>${escape(choice.book.author)}</span></p></div><div class="decision-actions"><button id="review-choice" class="primary">View reasons</button><button id="revoke-choice" class="secondary">Undo choice</button></div>${apiMode?feedbackHTML(choice.book.id):''}</section>`;
  if(state.deferred)return `<section class="decision-strip deferred" aria-labelledby="decision-heading"><div class="decision-copy"><h2 id="decision-heading" tabindex="-1">No book chosen yet</h2><p>Your shortlist is still here.</p></div><button id="reopen-choice" class="secondary">Keep looking</button></section>`;
  return `<section class="decision-strip open" aria-labelledby="decision-heading"><div class="decision-copy"><h2 id="decision-heading" tabindex="-1">Choose one together</h2>${count?`<p>${count} ${count===1?'book you both want':'books you both want'} to read.</p>`:''}</div><button id="defer-choice" class="quiet">Decide later</button></section>`;
 }
+function feedbackKey(id){return JSON.stringify([state.modelVersion,id]);}
+function feedbackHTML(id){
+ const status=state.feedback[feedbackKey(id)];
+ return `<div class="anonymous-feedback"><p>${status==='sent'?'Thanks. Anonymous feedback sent.':status==='pending'?'Sending anonymous feedback…':status==='unknown'?'Delivery could not be confirmed. Your choice is kept here.':'Your choice stays on this page. You can also send it as anonymous feedback.'}</p><button id="send-feedback" class="quiet" ${status?'disabled':''}>${status==='sent'?'Feedback sent':'Send anonymous feedback'}</button></div>`;
+}
+async function sendFeedback(){
+ const id=state.choice;if(!id||!bothWilling(state.votes[id])||!state.modelVersion)return;
+ const key=feedbackKey(id);if(state.feedback[key])return;
+ state.feedback[key]='pending';renderResultsContent();
+ try{await api.feedback({bookId:id,vote:'would_read',modelVersion:state.modelVersion});state.feedback[key]='sent';}
+ catch{state.feedback[key]='unknown';}
+ if(state.stage==='results'&&!state.pending)renderResultsContent();
+}
 function bindDecision(){
+ $('#send-feedback')?.addEventListener('click',sendFeedback);
  $('#review-choice')?.addEventListener('click',()=>openDetail(state.choice));
  $('#revoke-choice')?.addEventListener('click',()=>{recorder.record('revoke_choice',{rank:state.results.findIndex(result=>result.book.id===state.choice)+1});state.choice=null;renderResultsContent();$('#decision-heading').focus({preventScroll:true});toast('Choice undone. Your interests are kept.');});
  $('#defer-choice')?.addEventListener('click',()=>{deferChoice(state);renderResultsContent();$('#decision-heading').focus({preventScroll:true});recorder.record('defer_choice');});
- $('#reopen-choice')?.addEventListener('click',()=>{state.deferred=false;renderResultsContent();$(`.result-card[data-result="${state.selected}"]`,$('#result-list')).focus({preventScroll:true});});
+ $('#reopen-choice')?.addEventListener('click',()=>{state.deferred=false;renderResultsContent();findData('data-result',state.selected,$('#result-list')).focus({preventScroll:true});});
 }
 function renderResultsContent(){
+ if(state.pending){$('#result-list').innerHTML='<div class="empty-message">Updating your shortlist…</div>';$('#decision-panel').innerHTML='';return;}
+ if(!state.results.length){$('#result-list').innerHTML='<div class="empty-message"><p>No new books are available for this pair.</p><p>Your favorites are kept. Try another set of books.</p></div>';$('#decision-panel').innerHTML='';$('#map-selected').innerHTML='';return;}
  pageObserver?.disconnect();$('#decision-panel').innerHTML=decisionHTML();bindDecision();
- $('#result-list').innerHTML=state.results.map((result,index)=>{const id=result.book.id,votes=state.votes[id]||{},chosen=state.choice===id;return `<button class="result-card  ${state.selected===id?'selected':''} ${chosen?'joint-choice':''}" data-result="${id}" aria-label="View ${escape(result.book.title)} and both readers' reasons${chosen?'; chosen together':''}"><span class="rank-number" aria-hidden="true">${index+1}</span>${bookTile(result.book)}<div class="result-info"><div class="result-title-line"><h2>${escape(result.book.title)}</h2><span class="detail-cue" aria-hidden="true">↗</span></div><p>${escape(result.book.author)}</p><div class="result-evidence-preview">${['a','b'].map(reader=>`<div class="result-reason-preview reader-${reader}"><span class="reason-preview-label">${readerName(reader)} · Your reference</span><strong>${escape(result.reasons[reader].seedTitle)}</strong><span class="reason-preview-tags">${result.reasons[reader].tags.slice(0,2).map(escape).join(' · ')||'No shared themes'}</span></div>`).join('')}</div><div class="sample-fit-summary" aria-label="Approximate sample theme overlap">${['a','b'].map(reader=>{const fit=sampleFit(reader==='a'?result.fitA:result.fitB);return `<div class="reader-${reader}" data-fit="${fit.level}"><span>${readerName(reader)}</span><strong>${escape(fit.label)}</strong></div>`;}).join('')}</div><div class="card-vote-row">${['a','b'].map(reader=>`<span class="reader-${reader}">${readerName(reader)}: ${voteLabel(votes[reader])}</span>`).join('')}${chosen?'<strong class="card-outcome">Chosen together</strong>':bothWilling(votes)?'<span class="card-outcome">Both interested · Confirm to choose</span>':''}</div></div></button>`;}).join('');
+ $('#result-list').innerHTML=state.results.map((result,index)=>{const id=result.book.id,votes=state.votes[id]||{},chosen=state.choice===id;return `<button class="result-card  ${state.selected===id?'selected':''} ${chosen?'joint-choice':''}" data-result="${escape(id)}" aria-label="View ${escape(result.book.title)} and both readers' reasons${chosen?'; chosen together':''}"><span class="rank-number" aria-hidden="true">${index+1}</span>${bookTile(result.book)}<div class="result-info"><div class="result-title-line"><h2>${escape(result.book.title)}</h2><span class="detail-cue" aria-hidden="true">↗</span></div><p>${escape(result.book.author)}</p><div class="result-evidence-preview">${['a','b'].map(reader=>`<div class="result-reason-preview reader-${reader}"><span class="reason-preview-label">${readerName(reader)} · Your reference</span><strong>${escape(result.reasons[reader].seedTitle)}</strong><span class="reason-preview-tags">${result.reasons[reader].tags.slice(0,2).map(escape).join(' · ')||'No shared themes'}</span></div>`).join('')}</div><div class="sample-fit-summary" aria-label="Approximate match for each reader">${['a','b'].map(reader=>{const fit=sampleFit(reader==='a'?result.fitA:result.fitB,{api:apiMode});return `<div class="reader-${reader}" data-fit="${fit.level}"><span>${readerName(reader)}</span><strong>${escape(fit.label)}</strong></div>`;}).join('')}</div><div class="card-vote-row">${['a','b'].map(reader=>`<span class="reader-${reader}">${readerName(reader)}: ${voteLabel(votes[reader])}</span>`).join('')}${chosen?'<strong class="card-outcome">Chosen together</strong>':bothWilling(votes)?'<span class="card-outcome">Both interested · Confirm to choose</span>':''}</div></div></button>`;}).join('');
  $$('.result-card[data-result]',$('#result-list')).forEach(button=>button.onclick=()=>openDetail(button.dataset.result));
  const result=state.results.find(item=>item.book.id===state.selected)||state.results[0];
  $('#map-selected').innerHTML=`<div>${escape(result.book.title)}</div><button id="map-detail" class="secondary">View reasons</button>`;
  $('#map-detail').onclick=()=>openDetail(result.book.id,{kind:'map-action',id:result.book.id});
- $$('a[href^="/b/"]').forEach(link=>link.href=`/b/?v=20261008.2&${seedQuery(state.a,state.b,state.mode)}`);
- resultMap.update(state.a,state.b,state.results,state.selected);pageObserver=revealItems($$('.result-card[data-result]',$('#result-list')),'recommendation');
+ $$('a[href^="/b/"]').forEach(link=>link.href=`/b/?v=20261012.1&${apiMode?'':seedQuery(state.a,state.b,state.mode)}`);
+ resultMap.update(state.a,state.b,state.results,state.selected,state.galaxy);pageObserver=revealItems($$('.result-card[data-result]',$('#result-list')),'recommendation');
  if(!$('#copy-fallback').hidden)$('#shortlist-text').value=shortlistText(state.results,state.choice);
 }
-function mapNode(id){const container=$('#large-map');return container?$(`.map-node[data-id="${id}"]`,container):null;}
+function mapNode(id){const container=$('#large-map');return container?findData('data-id',id,container):null;}
 function restoreDetailFocus(trigger){
- let target;if(trigger?.kind==='favorite-map'||trigger?.kind==='map')target=mapNode(trigger.id);else if(trigger?.kind==='map-action')target=$('#map-detail');else target=$(`.result-card[data-result="${trigger?.id||state.selected}"]`);
+ let target;if(trigger?.kind==='favorite-map'||trigger?.kind==='map')target=mapNode(trigger.id);else if(trigger?.kind==='map-action')target=$('#map-detail');else target=findData('data-result',trigger?.id||state.selected);
  (target||$('#open-galaxy')||$('#page-title'))?.focus({preventScroll:true});
 }
 function opinionNote(votes={}){if(bothWilling(votes))return 'Both interested. Confirm to choose it together.';if(votes.a==='no'||votes.b==='no')return 'Keep exploring the other books.';if(votes.a==='unsure'||votes.b==='unsure')return 'Not sure yet? You can come back to this one.';if(votes.a||votes.b)return 'Waiting for the other reader.';return 'Mark Interested for each reader to enable a shared choice.';}
 function detailHTML(result,index){
  const id=result.book.id,votes=state.votes[id]||{},chosen=state.choice===id,previous=state.results[(index+state.results.length-1)%state.results.length],next=state.results[(index+1)%state.results.length];
- return `<div class="detail-header detail-header-cover"><div class="detail-cover" aria-hidden="true">${bookTile(result.book,{compact:true})}</div><div class="detail-header-copy"><span class="book-position">Book ${index+1} of 5</span><h2 id="detail-title" tabindex="-1">${escape(result.book.title)}</h2><p>${escape(result.book.author)} · ${result.book.year}</p></div></div><nav class="detail-pagination" aria-label="Browse the five recommendations"><button id="prev-candidate" class="secondary" aria-label="Previous book: ${escape(previous.book.title)}">← Previous</button><span class="candidate-position">${index+1} / 5</span><button id="next-candidate" class="secondary" aria-label="Next book: ${escape(next.book.title)}">Next →</button></nav><div class="reasons">${['a','b'].map(reader=>reasonHTML(result,reader)).join('')}</div><div class="votes-block"><h3>Would you each read this?</h3><div class="desk-vote-columns">${['a','b'].map(reader=>`<section class="desk-vote-reader reader-${reader}" aria-label="${readerName(reader)} interest"><strong>${readerName(reader)}</strong><div class="desk-vote-options">${VOTE_OPTIONS.map(([value,label])=>`<button data-vote="${reader}:${value}" aria-label="${readerName(reader)}: ${label}" aria-pressed="${votes[reader]===value}" class="${votes[reader]===value?'chosen':''}">${label}</button>`).join('')}</div></section>`).join('')}</div><p id="opinion-note" class="vote-state" role="status">${chosen?'Chosen together. You can change your mind.':opinionNote(votes)}</p></div><div class="detail-choice-actions"><button id="confirm-choice" class="primary" ${!bothWilling(votes)||chosen?'disabled':''}>${chosen?'Chosen together':'Choose this book together'}</button></div><details class="detail-evidence" id="detail-evidence-panel" ${state.exploration?'open':''}><summary>Explore the connections</summary><div class="reasons">${['a','b'].map(reader=>readerEvidenceHTML(result,reader,state[reader],state.exploration,{includeReason:false})).join('')}</div><section id="evidence-explorer" class="evidence-explorer" hidden></section></details>`;
+ return `<div class="detail-header detail-header-cover"><div class="detail-cover" aria-hidden="true">${bookTile(result.book,{compact:true})}</div><div class="detail-header-copy"><span class="book-position">Book ${index+1} of ${state.results.length}</span><h2 id="detail-title" tabindex="-1">${escape(result.book.title)}</h2><p>${escape(result.book.author)}${result.book.year==null?'':` · ${result.book.year}`}</p></div></div><nav class="detail-pagination" aria-label="Browse recommendations"><button id="prev-candidate" class="secondary" aria-label="Previous book: ${escape(previous.book.title)}">← Previous</button><span class="candidate-position">${index+1} / ${state.results.length}</span><button id="next-candidate" class="secondary" aria-label="Next book: ${escape(next.book.title)}">Next →</button></nav><div class="reasons">${['a','b'].map(reader=>reasonHTML(result,reader)).join('')}</div><div class="votes-block"><h3>Would you each read this?</h3><div class="desk-vote-columns">${['a','b'].map(reader=>`<section class="desk-vote-reader reader-${reader}" aria-label="${readerName(reader)} interest"><strong>${readerName(reader)}</strong><div class="desk-vote-options">${VOTE_OPTIONS.map(([value,label])=>`<button data-vote="${reader}:${value}" aria-label="${readerName(reader)}: ${label}" aria-pressed="${votes[reader]===value}" class="${votes[reader]===value?'chosen':''}">${label}</button>`).join('')}</div></section>`).join('')}</div><p id="opinion-note" class="vote-state" role="status">${chosen?'Chosen together. You can change your mind.':opinionNote(votes)}</p></div><div class="detail-choice-actions"><button id="confirm-choice" class="primary" ${!bothWilling(votes)||chosen?'disabled':''}>${chosen?'Chosen together':'Choose this book together'}</button></div><details class="detail-evidence" id="detail-evidence-panel" ${state.exploration?'open':''}><summary>Explore the connections</summary><div class="reasons">${['a','b'].map(reader=>readerEvidenceHTML(result,reader,state[reader],state.exploration,{includeReason:false})).join('')}</div><section id="evidence-explorer" class="evidence-explorer" hidden></section></details>`;
 }
 
 function refreshDetail(id,focus){
@@ -1600,34 +2042,38 @@ function renderExplorer(){
  const reader=exploration.reader;
  if(exploration.kind==='theme'){
   const matches=themeFavorites(state[reader],exploration.theme);
-  region.innerHTML=`<div class="theme-inspector"><h3 id="explorer-title" tabindex="-1">${escape(exploration.theme)}</h3><p>${matches.length} of ${readerName(reader)}’s five favorites share this sample theme with ${escape(result.book.title)}.</p><div class="theme-favorites">${matches.map(book=>`<button class="evidence-seed" data-seed="${book.id}" data-reader="${reader}">${escape(book.title)} <span aria-hidden="true">↗</span></button>`).join('')}</div><button id="close-explorer" class="quiet">Back to reasons</button></div>`;
+  region.innerHTML=`<div class="theme-inspector"><h3 id="explorer-title" tabindex="-1">${escape(exploration.theme)}</h3><p>${matches.length} of ${readerName(reader)}’s five favorites share this theme with ${escape(result.book.title)}.</p><div class="theme-favorites">${matches.map(book=>`<button class="evidence-seed" data-seed="${escape(book.id)}" data-reader="${reader}">${escape(book.title)} <span aria-hidden="true">↗</span></button>`).join('')}</div><button id="close-explorer" class="quiet">Back to reasons</button></div>`;
  }else{
   const book=byId(exploration.id),shared=book.tags.filter(theme=>result.book.tags.includes(theme));
-  region.innerHTML=`<div class="seed-inspector"><div class="favorite-cover" aria-hidden="true">${bookTile(book,{compact:true})}</div><div class="favorite-info"><p>${readerName(reader)}’s favorite</p><h3 id="explorer-title" tabindex="-1">${escape(book.title)}</h3><p>${escape(book.author)} · ${book.year}</p><p>${shared.length?`Shared sample themes with ${escape(result.book.title)}: ${shared.map(escape).join(' · ')}.`:'No shared sample themes with this recommendation.'}</p>${exploration.parentTheme?'<button id="back-to-theme" class="secondary">Back to shared theme</button>':''}<button id="close-explorer" class="quiet">Back to reasons</button></div></div>`;
+  region.innerHTML=`<div class="seed-inspector"><div class="favorite-cover" aria-hidden="true">${bookTile(book,{compact:true})}</div><div class="favorite-info"><p>${readerName(reader)}’s favorite</p><h3 id="explorer-title" tabindex="-1">${escape(book.title)}</h3><p>${escape(book.author)}${book.year==null?'':` · ${book.year}`}</p><p>${shared.length?`Shared themes with ${escape(result.book.title)}: ${shared.map(escape).join(' · ')}.`:'No shared themes with this recommendation.'}</p>${exploration.parentTheme?'<button id="back-to-theme" class="secondary">Back to shared theme</button>':''}<button id="close-explorer" class="quiet">Back to reasons</button></div></div>`;
  }
  $('#close-explorer').onclick=closeExplorer;
  $('#back-to-theme')?.addEventListener('click',()=>{state.exploration={kind:'theme',reader,theme:exploration.parentTheme};renderExplorer();$('#explorer-title').focus();});bindEvidence();
 }
 function closeExplorer(){
  const trigger=explorerTrigger;state.exploration=null;renderExplorer();
- const target=trigger?.kind==='seed'?$(`[data-seed="${trigger.id}"][data-reader="${trigger.reader}"]`,$('#detail-body')):$$('[data-theme]',$('#detail-body')).find(button=>button.dataset.reader===trigger?.reader&&button.dataset.theme===trigger?.theme);
+ const target=trigger?.kind==='seed'?$$('[data-seed]',$('#detail-body')).find(node=>node.dataset.seed===trigger.id&&node.dataset.reader===trigger.reader):$$('[data-theme]',$('#detail-body')).find(button=>button.dataset.reader===trigger?.reader&&button.dataset.theme===trigger?.theme);
  (target||$('#detail-title'))?.focus({preventScroll:true});
 }
 function openFavorite(id,trigger){
  const book=byId(id);if(!book||!state.a.includes(id)&&!state.b.includes(id))return;
  const dialog=$('#detail-dialog'),readers=['a','b'].filter(reader=>state[reader].includes(id)),links=favoriteReferences(state.results,id);lastDetailTrigger=trigger;detailMode='favorite';state.exploration=null;detailObserver?.disconnect();delete dialog.dataset.bookId;
- $('#detail-body').innerHTML=`<section class="favorite-inspector"><div class="favorite-cover" aria-hidden="true">${bookTile(book)}</div><div class="favorite-info"><p>${readers.map(readerName).join(' and ')} favorite</p><h2 id="detail-title" tabindex="-1">${escape(book.title)}</h2><p>${escape(book.author)} · ${book.year}</p><div class="evidence-tags">${book.tags.map(theme=>`<span>${escape(theme)}</span>`).join('')}</div><h3>Connected recommendations</h3><div class="favorite-links">${links.length?links.map(item=>`<button class="evidence-seed" data-candidate="${item.result.book.id}"><strong>${escape(item.result.book.title)}</strong><span>Reference for ${item.readers.map(readerName).join(' and ')}</span></button>`).join(''):'<p>No current explanation uses this favorite as its direct reference.</p>'}</div><button id="close-favorite" class="secondary">Back to taste galaxy</button></div></section>`;
+ $('#detail-body').innerHTML=`<section class="favorite-inspector"><div class="favorite-cover" aria-hidden="true">${bookTile(book)}</div><div class="favorite-info"><p>${readers.map(readerName).join(' and ')} favorite</p><h2 id="detail-title" tabindex="-1">${escape(book.title)}</h2><p>${escape(book.author)}${book.year==null?'':` · ${book.year}`}</p><div class="evidence-tags">${book.tags.map(theme=>`<span>${escape(theme)}</span>`).join('')}</div><h3>Connected recommendations</h3><div class="favorite-links">${links.length?links.map(item=>`<button class="evidence-seed" data-candidate="${escape(item.result.book.id)}"><strong>${escape(item.result.book.title)}</strong><span>Reference for ${item.readers.map(readerName).join(' and ')}</span></button>`).join(''):'<p>No current explanation uses this favorite as its direct reference.</p>'}</div><button id="close-favorite" class="secondary">Back to taste galaxy</button></div></section>`;
  $$('[data-candidate]',$('#detail-body')).forEach(button=>button.onclick=()=>openDetail(button.dataset.candidate));$('#close-favorite').onclick=()=>dialog.close();
  if(!dialog.open)dialog.showModal();$('#detail-title').focus({preventScroll:true});
 }
 
 installBridge({
- read:()=>({a:[...state.a],b:[...state.b],mode:state.mode,stage:state.stage,fixture:'manual-tags-v1',recommendations:state.results.map(result=>result.book.id)}),
- apply:data=>{state.a=data.a;state.b=data.b;state.mode=data.mode;state.samplePair=false;clearDecision(state);state.undo=null;state.handoff='';state.exploration=null;state.query='';state.filter='all';state.reader='a';const complete=state.a.length===5&&state.b.length===5;state.results=complete?recommend(state.a,state.b,state.mode):[];state.selected=state.results[0]?.book.id||null;state.stage=complete?'results':'select';render();},
+ read:()=>({a:[...state.a],b:[...state.b],mode:state.mode,stage:state.stage,fixture:apiMode?(state.modelVersion||apiConnection.health?.modelVersion||'api'):'manual-tags-v1',recommendations:state.results.map(result=>result.book.id)}),
+ apply:async data=>{
+  api?.requests.cancel('favorites');api?.requests.cancel('pick');api?.requests.cancel('search');clearTimeout(searchTimer);state.picking=false;state.searchBusy=false;state.searchError='';
+  api?.requests.cancel('recommend');state.pending=false;state.a=data.a;state.b=data.b;state.mode=data.mode;state.samplePair=false;clearDecision(state);state.undo=null;state.handoff='';state.exploration=null;state.query='';state.searchResults=[];state.filter='all';state.reader='a';state.stage='select';state.results=[];state.selected=null;render();
+  if(state.a.length===5&&state.b.length===5)await showResults();
+ },
  find:()=>showResults()
 });
 
-recorder.record('start');render();
+recorder.record('start');render();if(apiMode)connectApi();
 
 return {  };
 })();

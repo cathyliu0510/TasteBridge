@@ -1,5 +1,5 @@
-import {byId,profile,project} from './engine.mjs?v=20261008.2';
-import {escape,svg} from './ui.mjs?v=20261008.2';
+import {byId,profile,project} from './engine.mjs';
+import {escape,svg} from './ui.mjs';
 const NS='http://www.w3.org/2000/svg';
 export class TasteMap{
  constructor(container,{dark=false,onSelect=()=>{}}={}){

@@ -148,6 +148,19 @@ test('reports network failure', async () => {
   await assert.rejects(client.health(), error => error.kind === 'network');
 });
 
+test('keeps the native browser fetch receiver when the function is supplied as a dependency', async () => {
+  const client = clientFor(async function () {
+    assert.equal(this, globalThis);
+    return reply({ status: 'ok', model_version: 'sample-v1', num_books: 52 });
+  });
+  assert.equal((await client.health()).numBooks, 52);
+});
+
+test('service outages do not describe search or health failures as feedback failures', async () => {
+  const client = clientFor(async () => reply({ detail: 'unavailable' }, 503));
+  await assert.rejects(client.health(), error => error.status === 503 && /book service/.test(error.message));
+});
+
 test('cancels a slow request on timeout', async () => {
   const client = new TasteBridgeClient({ baseUrl: 'http://127.0.0.1:9000', timeoutMs: 10,
     fetchImpl: async (_url, { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true })) });

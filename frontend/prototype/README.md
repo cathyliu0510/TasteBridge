@@ -4,7 +4,7 @@
 
 A (Reading Desk) is the preferred interface; B (Book Journey) is the comparison. Both demonstrate two readers choosing five favorites each, exploring five new bridge books, inspecting separate reasons, and making a reversible shared choice. Project links carry the selected favorite IDs and ranking mode back to the demo; votes and joint choices remain page-local.
 
-The current demo uses 23 curated sample books and deterministic theme vectors. Its screens make no API calls and have no trained model, RAG backend, accounts, or synchronized reading rooms. A tested [API client](src/api/client.mjs) now maps the backend's SPEC v0.3 responses; see the [integration check and remaining UI work](../../docs/backend-integration.md).
+The standalone demo uses 23 curated sample books and deterministic theme vectors. A's optional connected mode now calls the backend's SPEC v0.3 API for search, recommendations, reasons and galaxy coordinates. It uses 52 sample books and toy vectors, with no trained model, RAG backend, accounts or synchronized reading rooms. See the [integration guide](../../docs/backend-integration.md) and [MS2 app evidence](../../docs/ms2/frontend-api/).
 
 The project overview follows the final three-page MS1 proposal shared by the team. Data caps, model comparison, reader-study design, performance criteria, and later milestones are labeled as planned work or targets. It omits architecture alternatives, stretch goals, and later meeting suggestions that have not been adopted. Submission or instructor-approval status is not asserted.
 
@@ -17,6 +17,7 @@ node scripts/build-prototype.mjs
 node scripts/verify-release.mjs
 node --test tools/verify-ranking.mjs
 node --test tools/verify-api-client.mjs
+node --test tools/verify-api-desk.mjs tools/verify-server.mjs
 python3 -m http.server 4175 --bind 127.0.0.1 --directory dist
 ```
 
@@ -27,6 +28,12 @@ Edit src/a/ and src/b/ for the independent interfaces, and pages/project.html fo
 Keep full dataset downloads, credentials, personal information, and private team messages out of this folder. New project directions should be discussed before being represented as adopted plans.
 
 The shared Site is published separately by its owner. Merging this PR does not automatically deploy the Site or change the project scope.
+
+## Connected A 20261012.1
+
+With backend PR #2's source available, run `node scripts/dev.mjs --backend path/to/src/backend` from this directory. This builds the frontend and launches both services. `/a/?api=1` uses the same-origin `/api` relay; `/a/?api=0` keeps the offline demo. The root `compose.integration.yml` also runs the pair together in Docker.
+
+API mode uses returned IDs, hydrates search results, preserves server scores/coordinates, and supports missing metadata, empty results, cancellation and retry. Interests remain local; explicit anonymous feedback sends only a confirmed joint choice. The public Site and downloaded HTML continue to use the independent demo by default. B is unchanged.
 
 ## Reading Desk iteration 20261008.2
 

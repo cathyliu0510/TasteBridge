@@ -142,7 +142,9 @@ export class TasteBridgeClient {
     if (typeof fetchImpl !== 'function' || !Number.isFinite(timeoutMs) || timeoutMs <= 0)
       fail('Invalid API client configuration.');
     this.baseUrl = url.href.replace(/\/$/, '');
-    this.fetchImpl = fetchImpl;
+    // Browsers require window.fetch's receiver to be Window. Node permits the
+    // unbound function, so an API-only test would not catch this difference.
+    this.fetchImpl = (url, options) => fetchImpl.call(globalThis, url, options);
     this.timeoutMs = timeoutMs;
   }
 
@@ -169,7 +171,8 @@ export class TasteBridgeClient {
           ? value.detail.unknown_ids.filter(item => typeof item === 'string') : [];
         const message = response.status === 404 ? 'Some books are unavailable. Search the API catalogue again.'
           : response.status === 422 ? 'Check the selected books and ranking method.'
-          : response.status === 503 ? 'The API could not save this feedback. Try again.'
+          : response.status === 503 && path === '/feedback' ? 'The API could not save this feedback. Try again.'
+          : response.status >= 500 ? 'The book service is unavailable. Try again.'
           : 'The API request failed. Try again.';
         throw new TasteBridgeApiError(message, { kind: 'http', status: response.status, unknownIds });
       }

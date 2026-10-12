@@ -19,7 +19,7 @@ const names = bindings => bindings.split(',').map(part => part.trim()).filter(Bo
 const dependencyPath = (filename, specifier) => {
   if (!specifier.startsWith('./') && !specifier.startsWith('../')) throw Error(`External import: ${specifier}`);
   const path = posix.normalize(posix.join(posix.dirname(filename), specifier.split(/[?#]/)[0]));
-  if (path.startsWith('../')) throw Error(`Dependency escapes the checkout: ${path}`);
+  if (path.startsWith('../') && path !== '../api/client.mjs') throw Error(`Dependency escapes the checkout: ${path}`);
   return path;
 };
 
@@ -119,7 +119,7 @@ for (const version of ['A', 'B']) {
   html = html.replace(/<title>[^<]+<\/title>/, `<title>TasteBridge Prototype ${version} · ${version === 'A' ? 'Reading Desk' : 'Book Journey'}</title>`);
   const licenses = [];
   for (const filename of ['shared/fonts/Geist-OFL.txt', 'shared/fonts/Instrument-Serif-OFL.txt']) licenses.push(await read(filename));
-  const metadata = { project: 'TasteBridge', kind: 'Frontend prototype', version, direction: version === 'A' ? 'Preferred: Reading Desk' : 'Comparison: Book Journey', sourceRelease, data: '23 sample books; deterministic local recommendations', offline: true };
+  const metadata = { project: 'TasteBridge', kind: 'Frontend prototype', version, direction: version === 'A' ? 'Preferred: Reading Desk' : 'Comparison: Book Journey', sourceRelease, data: '23 sample books; deterministic local recommendations', offline: true, ...(version === 'A' ? { optionalApiMode: '?api=1, with a same-origin /api proxy' } : {}) };
   html = html.replace('</head>', () => `<style>${css}</style>\n<script type="application/json" id="prototype-metadata">${JSON.stringify(metadata).replaceAll('<', '\\u003c')}</script>\n<!-- Embedded typefaces: Geist and Instrument Serif. SIL Open Font Licenses:\n${licenses.join('\n\n').replaceAll('--', '- -')}\n-->\n</head>`);
   const path = resolve(destination, `TasteBridge-Prototype-${version}.html`);
   await writeFile(path, html);

@@ -30,7 +30,18 @@ export const BOOKS = [
 // Use only pre-2017 fixtures to mirror the age of the proposal's data. Do not
 // interpret inclusion as confirmation of membership in the UCSD catalogue.
 export const CATALOG = BOOKS.filter(x=>x.year<=2017);
-export const byId = id => CATALOG.find(x=>x.id===id);
+const apiBooks = new Map();
+let useApiBooks = false;
+export function enableApiCatalogue(){useApiBooks=true;apiBooks.clear();}
+export function cacheApiBooks(books,{full=false}={}){
+ const colors=['#365781','#6b6646','#427060','#885944','#4c6576','#7a4236'];
+ return books.map(book=>{
+  const old=apiBooks.get(book.id),hash=[...book.id].reduce((sum,char)=>sum+char.charCodeAt(0),0);
+  const value={...book,tags:!full&&old?.detailsLoaded?old.tags:book.tags,source:'api',color:colors[hash%colors.length],kind:'catalogue',detailsLoaded:full||old?.detailsLoaded||false};
+  apiBooks.set(book.id,value);return value;
+ });
+}
+export const byId = id => useApiBooks?apiBooks.get(id):CATALOG.find(x=>x.id===id);
 export const DEMO = {
  a:['mistborn','name-wind','hobbit','earthsea','magicians'],
  b:['gone-girl','girl-train','rebecca','orient','sharp']

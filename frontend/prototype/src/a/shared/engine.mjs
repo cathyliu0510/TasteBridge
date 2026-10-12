@@ -1,4 +1,4 @@
-import { CATALOG, byId, TAGS, DEMO } from './catalog.mjs?v=20261008.2';
+import { CATALOG, byId, TAGS, DEMO } from './catalog.mjs';
 export { CATALOG, byId, TAGS, DEMO };
 const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
 const norm=a=>Math.sqrt(dot(a,a));
@@ -30,9 +30,14 @@ export function project(v){
  const y=[.2,.25,1.1,-.8,-.65,-.55,.85,-.1,.65,-.2,1.05,-.8];
  return {x:dot(v,x)/(norm(v)||1),y:dot(v,y)/(norm(v)||1)};
 }
-export function sessionFromURL(){
+export function sessionFromURL({api=false}={}){
  const q=new URLSearchParams(location.search);
- const clean=key=>[...new Set((q.get(key)||'').split(',').filter(byId))].slice(0,5);
+ const clean=key=>{
+  const raw=q.get(key)||'';let ids=raw.split(',');
+  if(api&&raw.startsWith('[')){try{ids=JSON.parse(raw);}catch{ids=[];}}
+  if(!Array.isArray(ids))return [];
+  return [...new Set(ids.filter(id=>api?typeof id==='string'&&id.length>0&&[...id].length<=64:byId(id)))].slice(0,5);
+ };
  return {a:clean('a'),b:clean('b'),mode:q.get('mode')==='average'?'average':'least-misery'};
 }
-export function seedQuery(a,b,mode='least-misery'){return new URLSearchParams({a:a.join(','),b:b.join(','),mode}).toString();}
+export function seedQuery(a,b,mode='least-misery',{api=false}={}){return new URLSearchParams({a:api?JSON.stringify(a):a.join(','),b:api?JSON.stringify(b):b.join(','),mode,...(api?{api:'1'}:{})}).toString();}

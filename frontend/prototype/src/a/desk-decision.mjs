@@ -9,7 +9,8 @@ export function clearDecision(state){
 export function voteFor(state,id,reader,value){
  if(!['a','b'].includes(reader)||!VOTE_OPTIONS.some(([key])=>key===value))throw new Error('Invalid reader or interest.');
  if(!state.results.some(result=>result.book.id===id))throw new Error('Choose from the current five recommendations.');
- state.votes[id]??={};state.votes[id][reader]=value;state.deferred=false;
+ if(!Object.hasOwn(state.votes,id))Object.defineProperty(state.votes,id,{value:{},writable:true,enumerable:true,configurable:true});
+ state.votes[id][reader]=value;state.deferred=false;
  const revoked=state.choice===id&&!bothWilling(state.votes[id]);
  if(revoked)state.choice=null;
  return revoked;

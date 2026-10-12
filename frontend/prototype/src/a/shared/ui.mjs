@@ -1,4 +1,4 @@
-import {byId,TAGS,topTags} from './engine.mjs?v=20261008.2';
+import {byId,TAGS,topTags} from './engine.mjs';
 export const $=(s,p=document)=>p.querySelector(s);
 export const $$=(s,p=document)=>[...p.querySelectorAll(s)];
 export const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -7,7 +7,9 @@ export const svg=(type)=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none
 export const brand=`<span class="brand-mark" aria-hidden="true"><i></i><i></i></span><span>TasteBridge</span>`;
 export function bookTile(book,{selected=false,compact=false}={}){
  const coverArt=new URL(`./covers/${book.id}.svg`,import.meta.url).href;
- return `<span class="book-object ${compact?'compact':''}" data-cover="${escape(book.id)}" style="--book:${book.color};--cover-art:url('${escape(coverArt)}')"><span class="book-top">${book.year}</span><span class="book-title">${escape(book.title)}</span><span class="book-author">${escape(book.author)}</span>${selected?`<span class="book-check">${svg('check')}</span>`:''}</span>`;
+ const art=book.source==='api'?book.coverUrl:coverArt;
+ const style=`--book:${book.color};--cover-art:${art?`url(${JSON.stringify(art)})`:'none'}`;
+ return `<span class="book-object ${compact?'compact':''}" data-cover="${escape(book.id)}" style="${escape(style)}"><span class="book-top">${escape(book.year??'')}</span><span class="book-title">${escape(book.title)}</span><span class="book-author">${escape(book.author)}</span>${selected?`<span class="book-check">${svg('check')}</span>`:''}</span>`;
 }
 export function seedSlots(ids,reader){
  return Array.from({length:5},(_,i)=>ids[i]?`<button class="seed-slot filled" data-remove="${ids[i]}" aria-label="Remove ${escape(byId(ids[i]).title)} from Reader ${reader==='a'?'1':'2'}">${bookTile(byId(ids[i]),{compact:true})}<span class="slot-remove">${svg('close')}</span></button>`:`<span class="seed-slot vacant"><span>0${i+1}</span>${svg('plus')}</span>`).join('');
@@ -23,7 +25,7 @@ export function bindDialog(dialog,onClose){
  dialog.addEventListener('cancel',onClose||(()=>{}));
  dialog.addEventListener('close',()=>requestAnimationFrame(()=>{
   const id=dialog.dataset.bookId;
-  if(id)$(`[data-result="${id}"]`)?.focus({preventScroll:true});
+  if(id)$$('[data-result]').find(node=>node.dataset.result===id)?.focus({preventScroll:true});
  }));
 }
 export function motionPreference(){let m=matchMedia('(prefers-reduced-motion: reduce)').matches;try{m=localStorage.getItem('tastebridge-motion')==='off'||m;}catch{}return m;}

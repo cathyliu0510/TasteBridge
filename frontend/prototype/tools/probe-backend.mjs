@@ -46,9 +46,9 @@ const report = {
     '15 server galaxy points', '404 unknown ID recovery', ...(feedback ? ['explicit anonymous test feedback'] : [])],
   sampleInput: { reader_a: a, reader_b: b, k: 5, aggregation: 'least_misery' },
   sampleOutput: lower, feedback,
-  limits: ['Node client integration only; A/B screens are not connected to the API yet.',
+  limits: ['This probe verifies the API client; browser checks are recorded separately.',
     'Sample shelf vectors only; no trained model or evaluation evidence.',
-    'Docker daemon unavailable during this review; native uv service tested.']
+    'This is app-integration evidence, not evidence of a complete ingestion/training pipeline.']
 };
 const output = valueOf('--output');
 if (output) await writeFile(output, JSON.stringify(report, null, 2) + '\n');

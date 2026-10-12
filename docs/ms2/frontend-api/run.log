@@ -1,0 +1,64 @@
+Docker app stack: both services healthy. Sample artifacts only.
+backend-1   | 2026-10-12 20:14:59,197 INFO tastebridge.requests GET /health 200 0.7ms
+backend-1   | 2026-10-12 20:15:04,375 INFO tastebridge.requests GET /health 200 2.7ms
+backend-1   | 2026-10-12 20:15:09,518 INFO tastebridge.requests GET /health 200 1.4ms
+backend-1   | 2026-10-12 20:15:14,676 INFO tastebridge.requests GET /health 200 1.7ms
+backend-1   | 2026-10-12 20:15:19,822 INFO tastebridge.requests GET /health 200 0.4ms
+backend-1   | 2026-10-12 20:15:24,970 INFO tastebridge.requests GET /health 200 1.2ms
+backend-1   | 2026-10-12 20:15:30,088 INFO tastebridge.requests GET /health 200 0.5ms
+backend-1   | 2026-10-12 20:15:35,259 INFO tastebridge.requests GET /health 200 2.6ms
+frontend-1  | GET /healthz 200 2ms
+frontend-1  | GET /healthz 200 1ms
+frontend-1  | GET /healthz 200 1ms
+frontend-1  | GET /healthz 200 0ms
+frontend-1  | GET /healthz 200 0ms
+frontend-1  | GET /healthz 200 0ms
+frontend-1  | GET /healthz 200 0ms
+frontend-1  | GET /healthz 200 1ms
+frontend-1  | GET /healthz 200 0ms
+frontend-1  | GET /healthz 200 0ms
+frontend-1  | GET /healthz 200 0ms
+frontend-1  | GET /healthz 200 1ms
+frontend-1  | GET /a/ 200 3ms
+backend-1   | 2026-10-12 20:15:40,424 INFO tastebridge.requests GET /health 200 0.7ms
+backend-1   | 2026-10-12 20:15:45,602 INFO tastebridge.requests GET /health 200 32.9ms
+backend-1   | 2026-10-12 20:15:50,818 INFO tastebridge.requests GET /health 200 2.4ms
+backend-1   | 2026-10-12 20:15:56,034 INFO tastebridge.requests GET /health 200 3.2ms
+backend-1   | 2026-10-12 20:16:01,194 INFO tastebridge.requests GET /health 200 0.7ms
+backend-1   | 2026-10-12 20:16:06,351 INFO tastebridge.requests GET /health 200 1.6ms
+backend-1   | 2026-10-12 20:16:11,486 INFO tastebridge.requests GET /health 200 0.6ms
+backend-1   | 2026-10-12 20:16:16,629 INFO tastebridge.requests GET /health 200 0.4ms
+backend-1   | 2026-10-12 20:16:21,776 INFO tastebridge.requests GET /health 200 0.4ms
+backend-1   | 2026-10-12 20:16:27,095 INFO tastebridge.requests GET /health 200 2.2ms
+backend-1   | 2026-10-12 20:16:32,268 INFO tastebridge.requests GET /health 200 0.5ms
+backend-1   | 2026-10-12 20:16:37,434 INFO tastebridge.requests GET /health 200 2.4ms
+backend-1   | 2026-10-12 20:16:42,590 INFO tastebridge.requests GET /health 200 2.3ms
+backend-1   | 2026-10-12 20:16:47,775 INFO tastebridge.requests GET /health 200 4.2ms
+backend-1   | 2026-10-12 20:16:52,934 INFO tastebridge.requests GET /health 200 2.7ms
+backend-1   | 2026-10-12 20:16:58,080 INFO tastebridge.requests GET /health 200 0.5ms
+backend-1   | 2026-10-12 20:17:03,270 INFO tastebridge.requests GET /health 200 2.8ms
+backend-1   | 2026-10-12 20:17:08,407 INFO tastebridge.requests GET /health 200 0.5ms
+backend-1   | 2026-10-12 20:17:13,575 INFO tastebridge.requests GET /health 200 2.2ms
+backend-1   | 2026-10-12 20:17:18,708 INFO tastebridge.requests GET /health 200 0.5ms
+backend-1   | 2026-10-12 20:17:23,877 INFO tastebridge.requests GET /health 200 7.3ms
+backend-1   | 2026-10-12 20:17:29,033 INFO tastebridge.requests GET /health 200 0.7ms
+backend-1   | 2026-10-12 20:17:34,189 INFO tastebridge.requests GET /health 200 2.1ms
+backend-1   | 2026-10-12 20:17:39,358 INFO tastebridge.requests GET /health 200 8.9ms
+backend-1   | 2026-10-12 20:17:44,493 INFO tastebridge.requests GET /health 200 0.5ms
+backend-1   | 2026-10-12 20:17:49,662 INFO tastebridge.requests GET /health 200 3.5ms
+backend-1   | 2026-10-12 20:17:54,866 INFO tastebridge.requests GET /health 200 6.3ms
+backend-1   | 2026-10-12 20:18:00,024 INFO tastebridge.requests GET /health 200 1.8ms
+backend-1   | 2026-10-12 20:18:05,216 INFO tastebridge.requests GET /health 200 2.6ms
+backend-1   | 2026-10-12 20:18:10,362 INFO tastebridge.requests GET /health 200 0.5ms
+backend-1   | 2026-10-12 20:18:15,524 INFO tastebridge.requests GET /health 200 3.3ms
+backend-1   | 2026-10-12 20:18:20,677 INFO tastebridge.requests GET /health 200 2.0ms
+backend-1   | 2026-10-12 20:18:25,823 INFO tastebridge.requests GET /health 200 0.7ms
+backend-1   | 2026-10-12 20:18:30,974 INFO tastebridge.requests GET /health 200 2.5ms
+backend-1   | 2026-10-12 20:18:36,134 INFO tastebridge.requests GET /health 200 1.7ms
+backend-1   | 2026-10-12 20:18:41,181 INFO tastebridge.requests GET /health 200 0.4ms
+backend-1   | 2026-10-12 20:18:46,359 INFO tastebridge.requests GET /health 200 0.5ms
+backend-1   | 2026-10-12 20:18:51,513 INFO tastebridge.requests GET /health 200 7.2ms
+backend-1   | 2026-10-12 20:18:56,691 INFO tastebridge.requests GET /health 200 2.3ms
+backend-1   | 2026-10-12 20:19:01,848 INFO tastebridge.requests GET /health 200 1.1ms
+backend-1   | 2026-10-12 20:19:06,979 INFO tastebridge.requests GET /health 200 1.2ms
+backend-1   | 2026-10-12 20:19:12,104 INFO tastebridge.requests GET /health 200 0.5ms

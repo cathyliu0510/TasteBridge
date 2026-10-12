@@ -1,8 +1,32 @@
-import {byId,profile,project} from './shared/engine.mjs?v=20261008.2';
-import {escape,svg} from './shared/ui.mjs?v=20261008.2';
+import {byId,profile,project} from './shared/engine.mjs';
+import {escape,svg} from './shared/ui.mjs';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const stableJitter=id=>[...id].reduce((sum,letter)=>sum+letter.charCodeAt(0),0);
+
+export function galaxyLayout(a,b,results,galaxy=null){
+ const ids=[...new Set([...results.map(result=>result.book.id),...a,...b])];
+ const supplied=new Map();
+ if(galaxy)for(const point of [...galaxy.a,...galaxy.b,...galaxy.bridges]){
+  const old=supplied.get(point.id);
+  if(old&&(old.x!==point.x||old.y!==point.y))throw new Error('Conflicting galaxy coordinates.');
+  supplied.set(point.id,{x:point.x,y:point.y});
+ }
+ const raw=ids.map(id=>({id,p:galaxy?supplied.get(id):project(byId(id).vector)}));
+ if(raw.some(({p})=>!p||!Number.isFinite(p.x)||!Number.isFinite(p.y)))throw new Error('Missing galaxy coordinates.');
+ const xs=raw.map(book=>book.p.x),ys=raw.map(book=>book.p.y);
+ const xmin=Math.min(-1,...xs),xmax=Math.max(1,...xs),ymin=Math.min(-1,...ys),ymax=Math.max(1,...ys);
+ const convert=point=>({x:85+(point.x-xmin)/(xmax-xmin)*590,y:70+(point.y-ymin)/(ymax-ymin)*255});
+ const positions=new Map(raw.map(({id,p})=>{
+  const point=convert(p),jitter=galaxy?0:stableJitter(id);
+  return [id,galaxy?point:{x:point.x+(jitter%5-2)*7,y:point.y+(Math.floor(jitter/5)%5-2)*6}];
+ }));
+ // API cluster centers are visual centroids of the displayed favorites. Their
+ // coordinates are never treated as reader embeddings or used for scoring.
+ const centroid=seeds=>({x:seeds.reduce((sum,id)=>sum+supplied.get(id).x,0)/(seeds.length||1),y:seeds.reduce((sum,id)=>sum+supplied.get(id).y,0)/(seeds.length||1)});
+ const centers=galaxy?[convert(centroid(a)),convert(centroid(b))]:[convert(project(profile(a))),convert(project(profile(b)))];
+ return {ids,positions,centers};
+}
 
 // A projection of the exact sample vectors used by ranking, with a small,
 // deterministic label-separation offset. This prototype does not use UMAP.
@@ -51,33 +75,24 @@ export class DeskGalaxy{
    this.resizeObserver=new ResizeObserver(()=>this.updateHitTargets());this.resizeObserver.observe(this.svg);
   }
  }
- update(a,b,results,selected=null){
+ update(a,b,results,selected=null,galaxy=null){
   this.tooltip.classList.remove('show');
   this.a=a;this.b=b;this.results=results;this.selected=selected;
   this.resultLookup=new Map(results.map((result,index)=>[result.book.id,{...result,index}]));
-  const ids=[...new Set([...results.map(result=>result.book.id),...a,...b])];
-  const raw=ids.map(id=>({id,p:project(byId(id).vector)}));
-  const xs=raw.map(book=>book.p.x),ys=raw.map(book=>book.p.y);
-  const xmin=Math.min(-1,...xs),xmax=Math.max(1,...xs),ymin=Math.min(-1,...ys),ymax=Math.max(1,...ys);
-  const convert=point=>({x:85+(point.x-xmin)/(xmax-xmin)*590,y:70+(point.y-ymin)/(ymax-ymin)*255});
-  this.positions=new Map(raw.map(({id,p})=>{
-   const point=convert(p),jitter=stableJitter(id);
-   return [id,{x:point.x+(jitter%5-2)*7,y:point.y+(Math.floor(jitter/5)%5-2)*6}];
-  }));
-  const centers=[convert(project(profile(a))),convert(project(profile(b)))];
+  const {ids,positions,centers}=galaxyLayout(a,b,results,galaxy);this.positions=positions;
   const clusterPaths=[a,b].map((seeds,index)=>seeds.map(id=>{
    const point=this.positions.get(id),center=centers[index];
    return `<path class="cluster-line" d="M${center.x},${center.y} L${point.x},${point.y}" stroke="var(--${index?'b':'a'})" stroke-opacity=".12" fill="none"/>`;
   }).join('')).join('');
   const evidencePaths=results.map(result=>['a','b'].map(reader=>{
    const point=this.positions.get(result.book.id),seed=this.positions.get(result.reasons[reader].seedId);
-   return `<path class="evidence-line" data-result="${result.book.id}" data-seed="${result.reasons[reader].seedId}" data-reader="${reader}" d="M${seed.x},${seed.y} Q${(seed.x+point.x)/2},${Math.min(seed.y,point.y)-35} ${point.x},${point.y}" fill="none" stroke="var(--${reader})" stroke-width="1.5" opacity="0"/>`;
+   return `<path class="evidence-line" data-result="${escape(result.book.id)}" data-seed="${escape(result.reasons[reader].seedId)}" data-reader="${reader}" d="M${seed.x},${seed.y} Q${(seed.x+point.x)/2},${Math.min(seed.y,point.y)-35} ${point.x},${point.y}" fill="none" stroke="var(--${reader})" stroke-width="1.5" opacity="0"/>`;
   }).join('')).join('');
   const nodes=ids.map(id=>{
    const book=byId(id),point=this.positions.get(id),result=this.resultLookup.get(id),reader=a.includes(id)&&b.includes(id)?'both':a.includes(id)?'a':'b';
    const color=result?'var(--gold)':reader==='b'?'var(--b)':'var(--a)';
-   const label=result?`Bridge book ${result.index+1} of 5: ${book.title}. Open both readers' reasons.`:`${reader==='both'?'Both readers’':reader==='a'?'Reader 1’s':'Reader 2’s'} favorite: ${book.title}. Explore its sample themes.`;
-   return `<g class="map-node ${result?'is-bridge':'is-favorite'}" data-id="${id}" data-reader="${reader}" data-selected="${id===selected}" data-hover="false" transform="translate(${point.x},${point.y})" tabindex="0" role="button" aria-label="${escape(label)}" ${result?`aria-pressed="${id===selected}"`:''}><title>${escape(book.title)}</title><circle class="node-hit" r="23" fill="transparent"/><circle class="node-halo" r="${result?16:10}" fill="${color}" fill-opacity=".13"/><circle class="node-core" r="${result?5:4}" fill="${color}"/>${reader==='both'&&!result?'<circle r="7" fill="none" stroke="var(--b)" stroke-width="1.6"/>':''}<circle class="node-ring" r="22" fill="none" stroke="${color}" stroke-width=".8" opacity="${id===selected?1:0}"/>${result?`<text class="node-number" y="-23" text-anchor="middle" fill="var(--ink)" font-size="13">${result.index+1}</text>`:''}<text class="node-label" y="39" text-anchor="middle" fill="var(--ink)" font-size="13" opacity="${id===selected?1:0}">${escape(book.title.length>32?book.title.slice(0,29)+'…':book.title)}</text></g>`;
+   const label=result?`Bridge book ${result.index+1} of ${results.length}: ${book.title}. Open both readers' reasons.`:`${reader==='both'?'Both readers’':reader==='a'?'Reader 1’s':'Reader 2’s'} favorite: ${book.title}. Explore its themes.`;
+   return `<g class="map-node ${result?'is-bridge':'is-favorite'}" data-id="${escape(id)}" data-reader="${reader}" data-selected="${id===selected}" data-hover="false" transform="translate(${point.x},${point.y})" tabindex="0" role="button" aria-label="${escape(label)}" ${result?`aria-pressed="${id===selected}"`:''}><title>${escape(book.title)}</title><circle class="node-hit" r="23" fill="transparent"/><circle class="node-halo" r="${result?16:10}" fill="${color}" fill-opacity=".13"/><circle class="node-core" r="${result?5:4}" fill="${color}"/>${reader==='both'&&!result?'<circle r="7" fill="none" stroke="var(--b)" stroke-width="1.6"/>':''}<circle class="node-ring" r="22" fill="none" stroke="${color}" stroke-width=".8" opacity="${id===selected?1:0}"/>${result?`<text class="node-number" y="-23" text-anchor="middle" fill="var(--ink)" font-size="13">${result.index+1}</text>`:''}<text class="node-label" y="39" text-anchor="middle" fill="var(--ink)" font-size="13" opacity="${id===selected?1:0}">${escape(book.title.length>32?book.title.slice(0,29)+'…':book.title)}</text></g>`;
   }).join('');
   this.svg.innerHTML=`<desc>Numbered stars are bridge books. Select a star to inspect a favorite or recommendation. Arrow keys move focus between nearby stars; Enter opens the book.</desc><g class="map-content"><ellipse cx="${centers[0].x}" cy="${centers[0].y}" rx="112" ry="80" fill="none" stroke="var(--a)" stroke-opacity=".11"/><ellipse cx="${centers[1].x}" cy="${centers[1].y}" rx="112" ry="80" fill="none" stroke="var(--b)" stroke-opacity=".11"/>${clusterPaths}${evidencePaths}${nodes}<text x="${centers[0].x}" y="${Math.min(405,centers[0].y+106)}" text-anchor="middle" fill="var(--a)" font-size="14">Reader 1</text><text x="${centers[1].x}" y="${Math.min(405,centers[1].y+106)}" text-anchor="middle" fill="var(--b)" font-size="14">Reader 2</text></g>`;
   this.group=this.svg.querySelector('.map-content');this.transform();

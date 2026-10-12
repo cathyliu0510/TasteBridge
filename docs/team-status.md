@@ -4,6 +4,8 @@ Checked October 8, 2026. Sources: the [MS1 proposal](../milestones/ms1/), Nikhil
 
 October 12 update: [Nikhil's backend PR #2](https://github.com/cathyliu0510/TasteBridge/pull/2) now establishes his API/deployment workstream. Its SPEC and implementation were checked against the frontend; [results and open integration choices](backend-integration.md). Other members' entries below retain their October 8 evidence dates.
 
+Jenny's A now connects to that API; the frontend/backend Docker app stack and browser flow have been checked with toy artifacts. [MS2 app evidence](ms2/frontend-api/) records the completed frontend integration. This does not settle ownership or completion of the data/training pipeline.
+
 ## Milestone 2 work split
 
 These are members' own offers, not a finalized allocation of every task.

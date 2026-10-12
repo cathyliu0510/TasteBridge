@@ -1,0 +1,35 @@
+# MS2 app integration evidence
+
+Checked October 12, 2026: A **20261012.1** against backend PR #2 (`a9f1620dc2ea3070c600f7cca5128805cc8b74a0`). This records the application skeleton with sample artifacts; it does not establish completion of the data pipeline or trained-model deliverables.
+
+| Check | Result |
+| --- | --- |
+| Frontend tests | 39 passed: API client, request races, ranking state, metadata rendering and HTTP relay |
+| Build | Four routes verified; root matches A; B's bundle is unchanged |
+| Docker | Frontend and backend healthy together, launched with one Compose command |
+| Native app | The same flow also ran with the native one-command launcher |
+| Browser flow | Two readers manually searched and selected five favorites each; API returned five books and separate reasons |
+| Ranking / galaxy | Both aggregation modes worked; 15 stars used server coordinates; an absent joint choice was revoked after re-ranking |
+| Feedback | Only an explicit anonymous feedback action wrote one event; no reader IDs or reading lists in the record |
+| Outage / recovery | Stopped the backend; kept 5/5 picks and five prior results; resumed the requested ranking with Try again |
+| Empty results | Temporary five-book fixture and identical five-book profiles returned no candidates; UI retained favorites and showed an empty-state message |
+| Responsive UI | Desktop, 390px and 320px layouts checked; no horizontal overflow |
+
+The Docker stack served `sample-shelf-toy-v1`, data version `hand-curated-sample-52`. The smaller empty-result fixture was generated temporarily from five rows of those toy artifacts and is not committed. These checks measure integration behavior, not recommendation quality or a user study.
+
+## Artifacts
+
+- [Sample input and mapped API output](api-check.json)
+- [Environment, source and artifact fingerprints](verification.json)
+- [Application run log](run.log)
+- [Desktop](desktop.jpg), [phone](phone.jpg), [unavailable API](api-unavailable.jpg), [empty shortlist](empty-results.jpg)
+
+See [run instructions](../../backend-integration.md#run). The checked pre-merge command used a separate backend checkout:
+
+```sh
+TASTEBRIDGE_BACKEND_DIR=../TasteBridge-backend-review/src/backend docker-compose -f compose.integration.yml up --build --wait
+```
+
+After the backend source is present at `src/backend/`, the override is unnecessary. This preview binds to localhost; the existing public website remains the independent frontend demo.
+
+Codex assisted with the adapter, UI wiring, launchers, tests and documentation. The browser and container checks above verify runtime behavior; human code review is still pending in the draft frontend PR.
