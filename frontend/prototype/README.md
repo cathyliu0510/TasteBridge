@@ -4,7 +4,7 @@
 
 A (Reading Desk) is the preferred interface; B (Book Journey) is the comparison. Both demonstrate two readers choosing five favorites each, exploring five new bridge books, inspecting separate reasons, and making a reversible shared choice. Project links carry the selected favorite IDs and ranking mode back to the demo; votes and joint choices remain page-local.
 
-The current demo uses 23 curated sample books and deterministic theme vectors. It has no trained model, remote API, RAG backend, accounts, or synchronized reading rooms.
+The current demo uses 23 curated sample books and deterministic theme vectors. Its screens make no API calls and have no trained model, RAG backend, accounts, or synchronized reading rooms. A tested [API client](src/api/client.mjs) now maps the backend's SPEC v0.3 responses; see the [integration check and remaining UI work](../../docs/backend-integration.md).
 
 The project overview follows the final three-page MS1 proposal shared by the team. Data caps, model comparison, reader-study design, performance criteria, and later milestones are labeled as planned work or targets. It omits architecture alternatives, stretch goals, and later meeting suggestions that have not been adopted. Submission or instructor-approval status is not asserted.
 
@@ -16,6 +16,7 @@ Requires Node.js. No package installation is needed.
 node scripts/build-prototype.mjs
 node scripts/verify-release.mjs
 node --test tools/verify-ranking.mjs
+node --test tools/verify-api-client.mjs
 python3 -m http.server 4175 --bind 127.0.0.1 --directory dist
 ```
 

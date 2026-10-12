@@ -2,6 +2,8 @@
 
 Checked October 8, 2026. Sources: the [MS1 proposal](../milestones/ms1/), Nikhil's October 7 meeting summary (19:48) and full transcript (22:38), and the October 8 WhatsApp work-split messages. The transcript was read in full; transcription errors are paraphrased here. Official course requirements take precedence over informal meeting wording.
 
+October 12 update: [Nikhil's backend PR #2](https://github.com/cathyliu0510/TasteBridge/pull/2) now establishes his API/deployment workstream. Its SPEC and implementation were checked against the frontend; [results and open integration choices](backend-integration.md). Other members' entries below retain their October 8 evidence dates.
+
 ## Milestone 2 work split
 
 These are members' own offers, not a finalized allocation of every task.
@@ -11,10 +13,10 @@ These are members' own offers, not a finalized allocation of every task.
 | Jenny Zhu | Frontend/user flow and design-choice documentation, starting from the prototype | Oct 8, 11:49 |
 | Cathy Liu | Initial baseline models, evaluation metrics and results documentation | Oct 8, 11:58 |
 | Anhad Ahluwalia | Testing and TF presentation slides | Oct 8, 14:42 |
-| Nikhil Babani | Offered to explore the backend; concrete scope still to confirm | Oct 8, 16:29 |
+| Nikhil Babani | Backend API/deployment; PR #2 implements search, recommendations and anonymous feedback with toy artifacts | PR #2 / SPEC, checked Oct 12; earlier offer Oct 8, 16:29 |
 | YiTong Li | Specific MS2 workstream not yet confirmed in the reviewed messages | Shared the preferred MS1 proposal |
 
-Owners for data ingestion, work-level preprocessing, Docker/uv, DVC and pipeline integration still need team confirmation. Neither Cathy's offer to help more nor Nikhil's backend exploration settles these assignments.
+Owners for data ingestion, work-level preprocessing, DVC and project-wide pipeline integration still need team confirmation. PR #2 includes the backend's Docker/uv setup; it does not settle those other assignments.
 
 ## Confirmed requirements and existing plan
 

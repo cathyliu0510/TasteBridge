@@ -4,7 +4,7 @@ A book recommender for two readers. Each picks five favorites; TasteBridge sugge
 
 [Frontend prototype](https://tastebridge-prototype.landenini.chatgpt.site/) · [Final MS1 proposal and source](milestones/ms1/) · [Current work split and meeting notes](docs/team-status.md)
 
-The frontend demo uses 23 curated sample books. The data pipeline, trained recommender and backend are planned in the MS1 proposal.
+The frontend demo uses 23 curated sample books. [Backend PR #2](https://github.com/cathyliu0510/TasteBridge/pull/2) adds an API with 52 sample books and toy vectors; the [frontend integration check](docs/backend-integration.md) documents the tested adapter and open decisions. The data pipeline and trained recommender remain planned work.
 
 ## Dataset
 
