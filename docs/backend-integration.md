@@ -1,6 +1,6 @@
 # Frontend / backend integration
 
-Version A **20261012.1** connects to [Nikhil's PR #2](https://github.com/cathyliu0510/TasteBridge/pull/2), commit `a9f1620dc2ea3070c600f7cca5128805cc8b74a0`, SPEC v0.3. B remains the independent offline comparison. [MS2 app evidence](ms2/frontend-api/) records the checks and sample input/output.
+Version A **20261012.2** connects to [Nikhil's PR #2](https://github.com/cathyliu0510/TasteBridge/pull/2), commit `a9f1620dc2ea3070c600f7cca5128805cc8b74a0`, SPEC v0.3. B remains the independent offline comparison. [MS2 app evidence](ms2/frontend-api/) records the checks and sample input/output.
 
 ## What works
 

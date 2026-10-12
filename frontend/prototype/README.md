@@ -29,6 +29,10 @@ Keep full dataset downloads, credentials, personal information, and private team
 
 The shared Site is published separately by its owner. Merging this PR does not automatically deploy the Site or change the project scope.
 
+## Reading Desk style 20261012.2
+
+A now shares B's deep green, warm cream and champagne palette, Instrument Serif / Geist typography, and rounded primary controls. Search, recommendations, per-reader reasons, choices and server-provided galaxy coordinates keep their existing behavior. [Visual checks](../../docs/ms2/frontend-api/style-20261012.2/) cover desktop and phone layouts; 39 existing frontend tests passed.
+
 ## Connected A 20261012.1
 
 With backend PR #2's source available, run `node scripts/dev.mjs --backend path/to/src/backend` from this directory. This builds the frontend and launches both services. `/a/?api=1` uses the same-origin `/api` relay; `/a/?api=0` keeps the offline demo. The root `compose.integration.yml` also runs the pair together in Docker.

@@ -33,3 +33,5 @@ TASTEBRIDGE_BACKEND_DIR=../TasteBridge-backend-review/src/backend docker-compose
 After the backend source is present at `src/backend/`, the override is unnecessary. This preview binds to localhost; the existing public website remains the independent frontend demo.
 
 Codex assisted with the adapter, UI wiring, launchers, tests and documentation. The browser and container checks above verify runtime behavior; human code review is still pending in the draft frontend PR.
+
+A's subsequent [20261012.2 visual update](style-20261012.2/) applies B's palette and type while retaining this API flow. The original screenshots and fingerprints above remain the dated 20261012.1 record.

@@ -28,7 +28,7 @@ let detailMode='recommendation';
 compactViewport.addEventListener('change',event=>{shelvesOpen=!event.matches;const shelves=$('#selected-shelves');if(shelves)shelves.open=shelvesOpen;});
 if(!apiMode&&state.a.length===5&&state.b.length===5){state.stage='results';state.results=recommend(state.a,state.b,state.mode);state.selected=state.results[0].book.id;}
 
-function header(){return `<header class="site-header"><a class="brand" href="./?v=20261012.1&api=${apiMode?1:0}" aria-label="TasteBridge home">${brand}</a><nav class="site-nav" aria-label="Main navigation"><button id="nav-select" class="${state.stage==='select'?'active':''}">Pick books</button><button id="nav-results" class="${state.stage==='results'?'active':''}">Recommendations</button><a class="project-link" href="/project/">Project</a></nav><a id="other-version" class="other-version" href="../b/?v=20261012.1&${apiMode?'':seedQuery(state.a,state.b,state.mode)}">View version B <span aria-hidden="true">↗</span></a></header>`;}
+function header(){return `<header class="site-header"><a class="brand" href="./?v=20261012.2&api=${apiMode?1:0}" aria-label="TasteBridge home">${brand}</a><nav class="site-nav" aria-label="Main navigation"><button id="nav-select" class="${state.stage==='select'?'active':''}">Pick books</button><button id="nav-results" class="${state.stage==='results'?'active':''}">Recommendations</button><a class="project-link" href="/project/">Project</a></nav><a id="other-version" class="other-version" href="../b/?v=20261012.2&${apiMode?'':seedQuery(state.a,state.b,state.mode)}">View version B <span aria-hidden="true">↗</span></a></header>`;}
 function footer(){return `<footer class="footer-line"><span>${apiMode?`Connected demo · ${apiConnection.health?.numBooks??'…'} books${apiConnection.health?.modelVersion==='sample-shelf-toy-v1'?' · Sample model':''}`:`Frontend prototype · ${CATALOG.length} sample books`}</span>${apiMode?'<div class="footer-actions"><a class="project-link" href="/project/">About the project ↗</a><a href="./?api=0">Use offline demo ↗</a></div>':'<a class="project-link" href="/project/">About the project ↗</a>'}</footer>`;}
 function connectionHTML(){
  if(!apiMode)return '';
@@ -169,7 +169,7 @@ function syncSelectionChrome(){
  ['a','b'].forEach(reader=>{const summary=$(`.reader-summary.reader-${reader}`);summary.classList.toggle('active',state.reader===reader);$('.summary-head strong',summary).innerHTML=`${readerName(reader)} <span>${state[reader].length}/5</span>`;$('[data-clear-reader]',summary).disabled=state[reader].length===0;});
  $('.shelf-counts').innerHTML=shelfCountsHTML();$('#selection-status').textContent=selectionStatus();$('#handoff-note').textContent=state.handoff;
  $('#pair-next').disabled=state[state.reader].length<5;$('#pair-next').innerHTML=`${continueLabel()} <span aria-hidden="true">→</span>`;$('#undo-selection').hidden=!state.undo;
- $('#other-version').href=`../b/?v=20261012.1&${apiMode?'':seedQuery(state.a,state.b,state.mode)}`;
+ $('#other-version').href=`../b/?v=20261012.2&${apiMode?'':seedQuery(state.a,state.b,state.mode)}`;
 }
 function updateShelf(reader){const summary=$(`.reader-summary.reader-${reader}`);$('.seed-slots',summary).innerHTML=readingShelf(state[reader],reader);bindShelf(summary);}
 function motionHook(node,name,duration=450){
@@ -310,7 +310,7 @@ function renderResultsContent(){
  const result=state.results.find(item=>item.book.id===state.selected)||state.results[0];
  $('#map-selected').innerHTML=`<div>${escape(result.book.title)}</div><button id="map-detail" class="secondary">View reasons</button>`;
  $('#map-detail').onclick=()=>openDetail(result.book.id,{kind:'map-action',id:result.book.id});
- $$('a[href^="../b/"]').forEach(link=>link.href=`../b/?v=20261012.1&${apiMode?'':seedQuery(state.a,state.b,state.mode)}`);
+ $$('a[href^="../b/"]').forEach(link=>link.href=`../b/?v=20261012.2&${apiMode?'':seedQuery(state.a,state.b,state.mode)}`);
  resultMap.update(state.a,state.b,state.results,state.selected,state.galaxy);pageObserver=revealItems($$('.result-card[data-result]',$('#result-list')),'recommendation');
  if(!$('#copy-fallback').hidden)$('#shortlist-text').value=shortlistText(state.results,state.choice);
 }
