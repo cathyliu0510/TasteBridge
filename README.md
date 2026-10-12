@@ -6,6 +6,15 @@ A book recommender for two readers. Each picks five favorites; TasteBridge sugge
 
 The standalone demo uses 23 curated books. A also connects to [backend PR #2](https://github.com/cathyliu0510/TasteBridge/pull/2), using 52 sample books and toy vectors. The [integration guide](docs/backend-integration.md) and [MS2 app evidence](docs/ms2/frontend-api/) cover the working flow and one-command Docker stack. The data pipeline and trained recommender remain planned work.
 
+## Review PR #1 + PR #2
+
+[Start both branches and check the flow](docs/backend-integration.md#run). No merge is needed for review. PR #2's own Compose file starts the backend; `compose.integration.yml` in PR #1 starts the frontend and backend together. The hosted prototype is the standalone frontend demo.
+
+| Scope | Status |
+| --- | --- |
+| Sample-data UI + API in Docker | Tested; [screenshots, logs and sample input/output](docs/ms2/frontend-api/) |
+| Real-data ingestion, baseline training/evaluation and whole MS2 pipeline | Still needs code/artifact verification; app-only startup does not establish completion |
+
 ## Dataset
 
 [UCSD Goodreads Book Graph](https://cseweb.ucsd.edu/~jmcauley/datasets/goodreads.html), collected from public shelves in late 2017. Academic use only; do not redistribute dataset files or use them commercially.

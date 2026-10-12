@@ -1,8 +1,8 @@
 # Team status
 
-Checked October 8, 2026. Sources: the [MS1 proposal](../milestones/ms1/), Nikhil's October 7 meeting summary (19:48) and full transcript (22:38), and the October 8 WhatsApp work-split messages. The transcript was read in full; transcription errors are paraphrased here. Official course requirements take precedence over informal meeting wording.
+Checked October 12, 2026. Sources: the [MS1 proposal](../milestones/ms1/), Nikhil's October 7 meeting summary (19:48) and full transcript (22:38), and the October 8 and 12 WhatsApp work-split messages. The October 12 TF transcript was also read in full; transcription errors are paraphrased here. Official course requirements take precedence over informal meeting wording.
 
-October 12 update: [Nikhil's backend PR #2](https://github.com/cathyliu0510/TasteBridge/pull/2) now establishes his API/deployment workstream. Its SPEC and implementation were checked against the frontend; [results and open integration choices](backend-integration.md). Other members' entries below retain their October 8 evidence dates.
+October 12 update: [Nikhil's backend PR #2](https://github.com/cathyliu0510/TasteBridge/pull/2) establishes his API/deployment workstream. Its SPEC and implementation were checked against the frontend; [results, joint review instructions and open integration choices](backend-integration.md).
 
 Jenny's A now connects to that API; the frontend/backend Docker app stack and browser flow have been checked with toy artifacts. [MS2 app evidence](ms2/frontend-api/) records the completed frontend integration. This does not settle ownership or completion of the data/training pipeline.
 
@@ -13,12 +13,12 @@ These are members' own offers, not a finalized allocation of every task.
 | Member | Work volunteered | Evidence |
 | --- | --- | --- |
 | Jenny Zhu | Frontend/user flow and design-choice documentation, starting from the prototype | Oct 8, 11:49 |
-| Cathy Liu | Initial baseline models, evaluation metrics and results documentation | Oct 8, 11:58 |
-| Anhad Ahluwalia | Testing and TF presentation slides | Oct 8, 14:42 |
+| Cathy Liu | Data preprocessing; earlier baseline models, evaluation metrics and results documentation offer remains recorded | Oct 12, 18:20; earlier offer Oct 8, 11:58 |
+| Anhad Ahluwalia | Testing and TF presentation slides; offered to help Cathy and suggested a shared Q&A rehearsal | Oct 12, 18:14 and 18:21; earlier offer Oct 8, 14:42 |
 | Nikhil Babani | Backend API/deployment; PR #2 implements search, recommendations and anonymous feedback with toy artifacts | PR #2 / SPEC, checked Oct 12; earlier offer Oct 8, 16:29 |
-| YiTong Li | Specific MS2 workstream not yet confirmed in the reviewed messages | Shared the preferred MS1 proposal |
+| YiTong Li | DVC setup, description embeddings and a local ChromaDB retrieval example | Oct 12 update, edited 17:26 |
 
-Owners for data ingestion, work-level preprocessing, DVC and project-wide pipeline integration still need team confirmation. PR #2 includes the backend's Docker/uv setup; it does not settle those other assignments.
+Cathy and YiTong's workstreams are now confirmed by their own messages. Project-wide pipeline integration ownership and the DVC remote still need confirmation. YiTong's proposed file paths are tentative; description embeddings prepare the MS3 hybrid and do not replace the backend's current `item_embeddings.npy` contract. PR #2 includes the backend's Docker/uv setup.
 
 ## Confirmed requirements and existing plan
 

@@ -35,3 +35,5 @@ After the backend source is present at `src/backend/`, the override is unnecessa
 Codex assisted with the adapter, UI wiring, launchers, tests and documentation. The browser and container checks above verify runtime behavior; human code review is still pending in the draft frontend PR.
 
 A's subsequent [20261012.2 visual update](style-20261012.2/) applies B's palette and type while retaining this API flow. The original screenshots and fingerprints above remain the dated 20261012.1 record.
+
+The [two-branch review recipe](../../backend-integration.md#run) was also checked from fresh remote clones on October 12. An isolated Docker stack returned five recommendations and 15 galaxy points, with both services healthy. [Versions and result summary](fresh-checkouts.json) · [build/run log](fresh-checkouts.log). This check submitted no feedback and left the existing preview running.
