@@ -1,2 +1,9 @@
 .integration-runtime/
 .DS_Store
+
+# Python / test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.venv/
