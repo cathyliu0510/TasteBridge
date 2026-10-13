@@ -9,6 +9,8 @@ import pytest
 from quality import (
     MIN_DESCRIPTION_CHARS,
     SHELF_BLOCKLIST,
+    SHELF_RULES_VERSION,
+    add_quality_flags,
     check_description,
     clean_description,
     clean_shelves,
@@ -183,3 +185,101 @@ def test_clean_shelves_skips_unknown_shapes():
         {"name": "caper", "count": "lots"},
     ]
     assert clean_shelves(raw) == ["heist"]
+
+
+# ------------------------------------------------------------ add_quality_flags
+
+
+def _books() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "work_id": ["w1", "w2", "w3", "w4"],
+            "title": ["Glass Heist", "Book Two", "Quiet Orchard", "Lantern School"],
+            "description": [
+                "<b>A crew</b> of con artists plans an impossible robbery.",
+                "Book 2.",
+                None,
+                "  ",
+            ],
+            "shelves": [
+                [{"name": "heist", "count": "10"}, {"name": "to-read", "count": "99"}],
+                ["fantasy"],
+                [],
+                None,
+            ],
+            "year": [2001, 2002, None, 2004],
+        }
+    )
+
+
+def test_adds_columns_with_expected_values():
+    out, _ = add_quality_flags(_books())
+    assert out["has_description"].tolist() == [True, False, False, False]
+    assert out["description_issue"].fillna("ok").tolist() == [
+        "ok", "too_short", "missing", "missing"
+    ]
+    assert out["description"].iloc[0] == "A crew of con artists plans an impossible robbery."
+    assert out["description"].iloc[1] == "Book 2."
+    assert out["description"].iloc[2:].isna().all()
+    assert out["shelves"].tolist() == [["heist"], ["fantasy"], [], []]
+    assert out["has_description"].dtype == bool
+    assert str(out["description_issue"].dtype) == "string"
+
+
+def test_invariants_hold():
+    out, _ = add_quality_flags(_books())
+    assert (out["has_description"] == out["description_issue"].isna()).all()
+    missing = out["description_issue"].eq("missing").fillna(False).astype(bool)
+    assert out.loc[missing, "description"].isna().all()
+
+
+def test_does_not_mutate_input_and_preserves_order():
+    books = _books()
+    before = books.copy(deep=True)
+    out, _ = add_quality_flags(books)
+    pd.testing.assert_frame_equal(books, before)
+    assert out["work_id"].tolist() == ["w1", "w2", "w3", "w4"]
+    assert out.index.equals(books.index)
+    pd.testing.assert_series_equal(out["year"], books["year"])
+
+
+def test_summary_counts_and_json_safe():
+    _, summary = add_quality_flags(_books())
+    assert summary == {
+        "n_books": 4,
+        "n_missing_description": 2,
+        "n_too_short_description": 1,
+        "n_books_no_shelves_after_clean": 2,
+        "shelves_raw_total": 3,
+        "shelves_kept_total": 2,
+        "n_unknown_shelf_entries": 0,
+        "min_description_chars": 40,
+        "min_shelf_count": 3,
+        "top_n_shelves": 20,
+        "shelf_blocklist_version": SHELF_RULES_VERSION,
+    }
+    json.dumps(summary)  # must not raise (plain ints, not numpy ints)
+
+
+def test_missing_column_raises_clear_error():
+    with pytest.raises(ValueError, match="description"):
+        add_quality_flags(_books().drop(columns="description"))
+
+
+def test_empty_frame():
+    out, summary = add_quality_flags(_books().iloc[0:0])
+    assert len(out) == 0
+    assert summary["n_books"] == 0
+    assert out["has_description"].dtype == bool
+
+
+def test_parquet_round_trip(tmp_path):
+    out, _ = add_quality_flags(_books())
+    path = tmp_path / "books.parquet"
+    out.to_parquet(path, index=False)
+    back = pd.read_parquet(path)
+    assert back["has_description"].dtype == bool
+    assert back["description_issue"].fillna("ok").tolist() == [
+        "ok", "too_short", "missing", "missing"
+    ]
+    assert [list(x) for x in back["shelves"]] == [["heist"], ["fantasy"], [], []]

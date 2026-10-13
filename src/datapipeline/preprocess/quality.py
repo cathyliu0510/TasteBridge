@@ -180,3 +180,63 @@ def clean_shelves(popular_shelves: object, min_count: int = 3, top_n: int = 20) 
     """
     kept, _, _ = _clean_shelves_with_stats(popular_shelves, min_count, top_n)
     return kept
+
+
+# ------------------------------------------------------------ table entry point
+
+
+def add_quality_flags(
+    books: pd.DataFrame,
+    *,
+    shelves_col: str = "shelves",
+    description_col: str = "description",
+    min_shelf_count: int = 3,
+    top_n_shelves: int = 20,
+    min_description_chars: int = MIN_DESCRIPTION_CHARS,
+) -> tuple[pd.DataFrame, dict]:
+    """Clean descriptions and shelves and add the two quality columns.
+
+    Returns (books_copy, summary). The copy has the same rows, order and index;
+    `description` and `shelves` are replaced by cleaned versions and two columns
+    are added: `has_description` (bool) and `description_issue` (None,
+    "missing" or "too_short"). The input frame is never modified. Store the
+    summary under manifest.json["quality"].
+    """
+    missing = [c for c in (shelves_col, description_col) if c not in books.columns]
+    if missing:
+        raise ValueError(f"add_quality_flags: missing column(s): {', '.join(missing)}")
+
+    out = books.copy()
+
+    checked = [check_description(text, min_description_chars) for text in out[description_col]]
+    out[description_col] = pd.Series(
+        [clean for clean, _ in checked], index=out.index, dtype="string"
+    )
+    out["description_issue"] = pd.Series(
+        [issue for _, issue in checked], index=out.index, dtype="string"
+    )
+    out["has_description"] = out["description_issue"].isna().astype(bool)
+
+    shelf_results = [
+        _clean_shelves_with_stats(value, min_shelf_count, top_n_shelves)
+        for value in out[shelves_col]
+    ]
+    out[shelves_col] = pd.Series(
+        [kept for kept, _, _ in shelf_results], index=out.index, dtype=object
+    )
+
+    issues = out["description_issue"]
+    summary = {
+        "n_books": int(len(out)),
+        "n_missing_description": int(issues.eq("missing").sum()),
+        "n_too_short_description": int(issues.eq("too_short").sum()),
+        "n_books_no_shelves_after_clean": int(sum(not kept for kept, _, _ in shelf_results)),
+        "shelves_raw_total": int(sum(raw for _, raw, _ in shelf_results)),
+        "shelves_kept_total": int(sum(len(kept) for kept, _, _ in shelf_results)),
+        "n_unknown_shelf_entries": int(sum(unknown for _, _, unknown in shelf_results)),
+        "min_description_chars": int(min_description_chars),
+        "min_shelf_count": int(min_shelf_count),
+        "top_n_shelves": int(top_n_shelves),
+        "shelf_blocklist_version": SHELF_RULES_VERSION,
+    }
+    return out, summary
