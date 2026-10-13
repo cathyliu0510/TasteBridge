@@ -16,5 +16,17 @@ services:
       timeout: 5s
       retries: 3
 
+  embed:
+    build: ./src/datapipeline/embed
+    volumes:
+      - ./data:/data
+    environment:
+      EMBED_INPUT: /data/processed/books.parquet
+      EMBED_OUTPUT_DIR: /data/embeddings
+    # Add when Cathy's preprocess service exists:
+    # depends_on:
+    #   preprocess:
+    #     condition: service_completed_successfully
+
 volumes:
   feedback:
