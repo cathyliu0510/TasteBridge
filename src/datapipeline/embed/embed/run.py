@@ -30,11 +30,16 @@ def _column(books, name: str) -> list:
 
 def _swap_into_place(tmp: Path, out: Path) -> None:
     old = out.with_name(out.name + ".old")
-    if old.exists():
+    if old.exists():  # out exists too (run() restores a lone .old), so this copy is stale
         shutil.rmtree(old)
     if out.exists():
         out.rename(old)
-    tmp.rename(out)
+    try:
+        tmp.rename(out)
+    except BaseException:
+        if old.exists() and not out.exists():
+            old.rename(out)  # put the previous output back
+        raise
     if old.exists():
         shutil.rmtree(old)
 
@@ -42,6 +47,10 @@ def _swap_into_place(tmp: Path, out: Path) -> None:
 def run(settings: Settings, encoder=None) -> dict:
     out = Path(settings.output_dir)
     tmp = out.with_name(out.name + ".tmp")
+    old = out.with_name(out.name + ".old")
+    if old.exists() and not out.exists():
+        log.warning("restoring %s left behind by an interrupted run", old)
+        old.rename(out)
     if tmp.exists():
         shutil.rmtree(tmp)
     tmp.mkdir(parents=True)
@@ -114,7 +123,15 @@ def run(settings: Settings, encoder=None) -> dict:
 
     close_log()
     release_chroma()  # Windows: Chroma must let go of its files before the rename
-    _swap_into_place(tmp, out)
+    try:
+        _swap_into_place(tmp, out)
+    except OSError as exc:
+        shutil.rmtree(tmp, ignore_errors=True)
+        raise OSError(
+            f"could not replace {out} ({exc}); the previous output was kept. "
+            "close any program using it (for example `python -m embed.query` or a notebook) "
+            "and re-run"
+        ) from exc
     log.info("embed: output ready at %s", out)
     return meta
 
@@ -123,7 +140,7 @@ def main() -> int:
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=_FORMAT)
     try:
         run(Settings.from_env())
-    except (InputError, EmbeddingError) as exc:
+    except (InputError, EmbeddingError, OSError) as exc:
         log.error("embed failed: %s", exc)
         return 1
     return 0

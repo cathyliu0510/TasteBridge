@@ -54,7 +54,22 @@ def load_books(path: Path) -> pd.DataFrame:
     empty = (titles.isna() | titles.eq("")).fillna(True).astype(bool)
     if empty.any():
         raise InputError(f"Empty title for work_id(s): {_preview(books.loc[empty, 'work_id'].tolist())}")
+
+    if any(_has_raw_shelf_records(value) for value in books["shelves"]):
+        raise InputError(
+            f"{path}: `shelves` holds raw Goodreads shelf records (name/count). "
+            "Run quality.add_quality_flags in preprocess first so shelves are cleaned lists of names."
+        )
     return books
+
+
+def _has_raw_shelf_records(shelves: object) -> bool:
+    if shelves is None or isinstance(shelves, (str, float)):
+        return False
+    try:
+        return any(isinstance(item, dict) for item in shelves)
+    except TypeError:  # pd.NA and other non-iterables
+        return False
 
 
 def sha256_file(path: Path) -> str:

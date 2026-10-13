@@ -112,3 +112,54 @@ def test_main_returns_1_on_bad_input(tmp_path, monkeypatch):
     monkeypatch.setenv("EMBED_CODE_VERSION", "test")
     assert main() == 1
     assert not (tmp_path / "out").exists()
+
+
+def _fail_rename_on(monkeypatch, call_number):
+    """Make the Nth Path.rename call raise PermissionError (like a Windows file lock)."""
+    from pathlib import Path
+
+    real_rename = Path.rename
+    calls = {"n": 0}
+
+    def flaky(self, target):
+        calls["n"] += 1
+        if calls["n"] == call_number:
+            raise PermissionError("[WinError 5] Access is denied (simulated)")
+        return real_rename(self, target)
+
+    monkeypatch.setattr(Path, "rename", flaky)
+
+
+def test_second_rename_failure_restores_previous_output(tmp_path, books_path, encoder, monkeypatch):
+    s = _settings(tmp_path, books_path)
+    s.output_dir.mkdir()
+    (s.output_dir / "marker.txt").write_text("old", encoding="utf-8")
+    _fail_rename_on(monkeypatch, 2)  # 1: out -> .old succeeds, 2: tmp -> out fails
+    with pytest.raises(OSError):
+        run(s, encoder=encoder)
+    assert (s.output_dir / "marker.txt").read_text(encoding="utf-8") == "old"
+    assert not (tmp_path / "embeddings.old").exists()
+    assert not (tmp_path / "embeddings.tmp").exists()
+
+
+def test_leftover_backup_is_restored_not_deleted(tmp_path, books_path):
+    old = tmp_path / "embeddings.old"
+    old.mkdir()
+    (old / "marker.txt").write_text("old", encoding="utf-8")
+    s = _settings(tmp_path, books_path)
+    with pytest.raises(EmbeddingError):
+        run(s, encoder=NaNEncoder())
+    assert (s.output_dir / "marker.txt").read_text(encoding="utf-8") == "old"
+
+
+def test_locked_output_gives_clear_error_and_exit_1(tmp_path, books_path, encoder, monkeypatch, caplog):
+    s = _settings(tmp_path, books_path)
+    s.output_dir.mkdir()
+    (s.output_dir / "marker.txt").write_text("old", encoding="utf-8")
+    _fail_rename_on(monkeypatch, 1)  # out -> .old fails: someone holds the folder
+    monkeypatch.setattr("embed.run.Settings.from_env", classmethod(lambda cls, env=None: s))
+    monkeypatch.setattr("embed.run.SentenceTransformerEncoder", lambda *a, **k: encoder)
+    assert main() == 1
+    assert "close any program using it" in caplog.text
+    assert (s.output_dir / "marker.txt").read_text(encoding="utf-8") == "old"
+    assert not (tmp_path / "embeddings.tmp").exists()

@@ -79,3 +79,9 @@ def test_sha256_and_upstream_version(books_path, tmp_path):
     (books_path.parent / "manifest.json").write_text("{not json", encoding="utf-8")
     assert read_upstream_version(books_path) is None
     assert read_upstream_version(tmp_path / "elsewhere" / "books.parquet") is None
+
+
+def test_raw_goodreads_shelves_are_rejected(tmp_path, books_df):
+    books_df["shelves"] = [[{"name": "heist", "count": "10"}, {"name": "to-read", "count": "99"}]] * 8
+    with pytest.raises(InputError, match="add_quality_flags"):
+        load_books(_write(tmp_path, books_df))
