@@ -1,0 +1,47 @@
+{
+  "checkedAt": "2026-10-13T23:12:05-04:00",
+  "scope": "Local rehearsal of both PRs merged; no shared branch was merged. Sample-artifact application only.",
+  "frontendCommit": "140ed74428d9845cd880295a3845867914cef6fa",
+  "backendCommit": "a9f1620dc2ea3070c600f7cca5128805cc8b74a0",
+  "mergedTree": "afae9ce6e7ae3f48d19e898720dd28d62ae84d2f",
+  "mergeConflicts": false,
+  "command": "TASTEBRIDGE_UI_PORT=4186 docker-compose -p tastebridge-merge-check -f compose.integration.yml up --build --wait",
+  "backendPath": "Default ./src/backend; no path override",
+  "containers": [
+    {
+      "service": "frontend",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "backend",
+      "state": "running",
+      "health": "healthy"
+    }
+  ],
+  "health": {
+    "status": "ok",
+    "model_version": "sample-shelf-toy-v1",
+    "num_books": 52
+  },
+  "routes": {
+    "/": 200,
+    "/a/?api=1": 200,
+    "/b/": 200,
+    "/project/": 200
+  },
+  "searchAndBookDetails": true,
+  "rankingChecks": {
+    "least_misery": {
+      "recommendations": 5,
+      "galaxyPoints": 15,
+      "readerReasonsAndScoresChecked": true
+    },
+    "average": {
+      "recommendations": 5,
+      "galaxyPoints": 15,
+      "readerReasonsAndScoresChecked": true
+    }
+  },
+  "feedbackSubmitted": false
+}

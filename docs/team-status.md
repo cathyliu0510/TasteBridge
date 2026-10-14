@@ -45,4 +45,4 @@ The meeting discussed book **metadata**, not full-book embeddings. Goodreads con
 
 The hybrid architecture remains open: MS1 lists LightFM-style and two-tower approaches; a transformer was mentioned in the meeting without a selection. Sparse/dense retrieval, an agent exploring preferences, LLM metadata enrichment, and reading-account/MCP integration were exploratory suggestions. No replacement architecture or additional product commitment was established.
 
-The two-reader scope, five favorites each, metadata-grounded reasons and a 2D model map remain the MS1 starting point. A 3D map, groups of 3–5, and LLM rephrasing are stretch goals. The prototype uses 23 curated sample books and fixed theme vectors, so its rankings and map are demonstrations rather than trained-model outputs.
+The two-reader scope, five favorites each, metadata-grounded reasons and a 2D model map remain the MS1 starting point. A 3D map, groups of 3–5, and LLM rephrasing are stretch goals. The standalone prototype uses 23 curated sample books and fixed theme vectors; connected A uses the backend's 52 hand-picked books and toy shelf vectors. Neither mode uses a trained model yet.
