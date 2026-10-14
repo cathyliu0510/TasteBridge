@@ -73,13 +73,19 @@ def main(argv: list[str] | None = None, encoder_factory=SentenceTransformerEncod
 
     try:
         meta = json.loads((out_dir / "meta.json").read_text(encoding="utf-8"))
+        model = (meta["embedding_model"], meta["model_revision"])
         collection = open_collection(out_dir / "chroma")
-    except (OSError, ValueError) as exc:
+    except KeyError as exc:
+        print(f"error: {out_dir / 'meta.json'} lacks {exc}. "
+              "Re-run `python -m embed.run` to rebuild it.", file=sys.stderr)
+        return 1
+    except (OSError, ValueError, TypeError) as exc:
         print(f"error: cannot open the index in {out_dir} ({exc}). "
               "Run `python -m embed.run` first.", file=sys.stderr)
+        release_chroma()
         return 1
 
-    encoder = encoder_factory(meta["embedding_model"], meta["model_revision"])
+    encoder = encoder_factory(*model)
     results = search(collection, encoder.encode([args.query])[0], k=args.k, genre=args.genre)
     for result in results:
         print(f"{result['rank']:>2}  {result['similarity']:.4f}  {result['title']} "

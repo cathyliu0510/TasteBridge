@@ -8,12 +8,13 @@ run never replaces good output.
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from embed.config import Settings
+from embed.config import ConfigError, Settings
 from embed.encoder import EmbeddingError, SentenceTransformerEncoder, check_embeddings
 from embed.inputs import InputError, load_books, read_upstream_version, sha256_file
 from embed.query import run_examples, write_examples
@@ -51,9 +52,17 @@ def run(settings: Settings, encoder=None) -> dict:
     if old.exists() and not out.exists():
         log.warning("restoring %s left behind by an interrupted run", old)
         old.rename(out)
+    books = load_books(settings.input_path)  # a missing input is reported before any write
     if tmp.exists():
         shutil.rmtree(tmp)
-    tmp.mkdir(parents=True)
+    try:
+        tmp.mkdir(parents=True)
+    except PermissionError as exc:
+        uid = os.getuid() if hasattr(os, "getuid") else 1000  # the container runs as uid 1000
+        raise OSError(
+            f"cannot write to {tmp.parent} ({exc}). On Linux, a ./data folder first created "
+            f"by Docker belongs to root: run `sudo chown -R {uid} data` on the host and re-run"
+        ) from exc
 
     handler = logging.FileHandler(tmp / "run.log", encoding="utf-8")
     handler.setFormatter(logging.Formatter(_FORMAT))
@@ -65,8 +74,7 @@ def run(settings: Settings, encoder=None) -> dict:
         handler.close()
 
     try:
-        log.info("embed: reading %s", settings.input_path)
-        books = load_books(settings.input_path)
+        log.info("embed: read %s", settings.input_path)
         if "has_description" not in books.columns:
             log.warning(
                 "has_description column absent; applying the local %d-char rule",
@@ -140,7 +148,7 @@ def main() -> int:
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=_FORMAT)
     try:
         run(Settings.from_env())
-    except (InputError, EmbeddingError, OSError) as exc:
+    except (ConfigError, InputError, EmbeddingError, OSError) as exc:
         log.error("embed failed: %s", exc)
         return 1
     return 0

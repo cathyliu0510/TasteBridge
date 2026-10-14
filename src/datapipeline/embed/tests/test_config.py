@@ -34,3 +34,22 @@ def test_overrides():
     assert (s.model_name, s.model_revision, s.batch_size) == ("m", "r", 8)
     assert s.example_queries == ("heist", "murder in a village")
     assert s.evidence_excerpts is True
+
+
+import pytest
+
+from embed import config
+from embed.config import ConfigError
+
+
+@pytest.mark.parametrize("value", ["abc", "0", "-3", "2.5", ""])
+def test_bad_batch_size_is_a_clear_error(value):
+    with pytest.raises(ConfigError, match="EMBED_BATCH_SIZE"):
+        Settings.from_env({"EMBED_BATCH_SIZE": value, "EMBED_CODE_VERSION": "abc"})
+
+
+def test_code_version_falls_back_to_source_hash_without_git(monkeypatch):
+    monkeypatch.setattr(config, "_git_sha", lambda: None)
+    first = Settings.from_env({}).code_version
+    assert first.startswith("src-sha256:") and len(first) == len("src-sha256:") + 12
+    assert Settings.from_env({}).code_version == first  # deterministic

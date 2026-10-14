@@ -163,3 +163,37 @@ def test_locked_output_gives_clear_error_and_exit_1(tmp_path, books_path, encode
     assert "close any program using it" in caplog.text
     assert (s.output_dir / "marker.txt").read_text(encoding="utf-8") == "old"
     assert not (tmp_path / "embeddings.tmp").exists()
+
+
+def test_bad_env_gives_exit_1(monkeypatch, tmp_path, books_path, caplog):
+    monkeypatch.setenv("EMBED_INPUT", str(books_path))
+    monkeypatch.setenv("EMBED_OUTPUT_DIR", str(tmp_path / "embeddings"))
+    monkeypatch.setenv("EMBED_BATCH_SIZE", "lots")
+    assert main() == 1
+    assert "EMBED_BATCH_SIZE" in caplog.text
+
+
+def test_missing_input_reported_before_touching_output(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    def refuse(*args, **kwargs):
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr(Path, "mkdir", refuse)
+    s = _settings(tmp_path, tmp_path / "processed" / "nope.parquet")
+    from embed.inputs import InputError
+    with pytest.raises(InputError, match="not found"):
+        run(s, encoder=None)
+
+
+def test_unwritable_output_folder_gives_clear_error(tmp_path, books_path, encoder, monkeypatch):
+    from pathlib import Path
+
+    def refuse(*args, **kwargs):
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr(Path, "mkdir", refuse)
+    s = _settings(tmp_path, books_path)
+    with pytest.raises(OSError, match="cannot write to") as info:
+        run(s, encoder=encoder)
+    assert "chown" in str(info.value)

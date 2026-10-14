@@ -69,3 +69,23 @@ def test_cli_main_uses_meta_model(tmp_path, encoder, books_df, capsys):
 def test_cli_main_missing_index(tmp_path, capsys):
     assert main(["anything", "--dir", str(tmp_path / "none")]) == 1
     assert "embed.run" in capsys.readouterr().err
+
+
+def test_cli_main_index_folder_without_collection(tmp_path, capsys):
+    out = tmp_path / "embeddings"
+    (out / "chroma").mkdir(parents=True)
+    write_meta(out, {"embedding_model": "m", "model_revision": "r"})
+    assert main(["anything", "--dir", str(out)]) == 1
+    assert "embed.run" in capsys.readouterr().err
+    release_chroma()
+
+
+def test_cli_main_meta_missing_keys(tmp_path, encoder, books_df, capsys):
+    out = tmp_path / "embeddings"
+    out.mkdir()
+    _build(out, encoder, books_df)
+    write_meta(out, {"stage": "embed"})
+    release_chroma()
+    assert main(["anything", "--dir", str(out)], encoder_factory=lambda n, r: encoder) == 1
+    assert "meta.json" in capsys.readouterr().err
+    release_chroma()

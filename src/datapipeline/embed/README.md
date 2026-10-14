@@ -16,11 +16,12 @@ as one of its inputs.
 ## Run it
 
 ```bash
-# whole stack, from the repo root
-docker compose up --build
-
-# only this stage
+# this stage (it has the compose profile `pipeline`, so a plain `docker compose up`
+# starts only the backend and does not build this ~3 GB image)
 docker compose run --rm embed
+
+# backend + this stage together
+docker compose --profile pipeline up --build
 
 # search the index
 docker compose run --rm embed python -m embed.query "a heist with a crew of con artists" --k 5 --genre fantasy
@@ -64,10 +65,10 @@ It is versioned with DVC (`dvc pull` to get it), never committed to git.
 | `EMBED_OUTPUT_DIR` | `/data/embeddings` |
 | `EMBED_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` |
 | `EMBED_MODEL_REVISION` | `1110a243fdf4706b3f48f1d95db1a4f5529b4d41` |
-| `EMBED_BATCH_SIZE` | `64` |
+| `EMBED_BATCH_SIZE` | `64` (whole number ≥ 1, else exit code 1) |
 | `EMBED_EXAMPLE_QUERIES` | three built-in queries, separated by `\|` |
 | `EMBED_EVIDENCE_EXCERPTS` | off (turn on only once the repo is private) |
-| `EMBED_CODE_VERSION` | `git rev-parse HEAD` if available |
+| `EMBED_CODE_VERSION` | `git rev-parse HEAD` if available, else `src-sha256:<12 hex>` of the `embed/*.py` code (inside Docker) |
 
 ## How it works (for Q&A)
 
@@ -80,7 +81,8 @@ It is versioned with DVC (`dvc pull` to get it), never committed to git.
 
 ## Troubleshooting
 
-- **Linux host, permission denied on `/data`**: the container runs as uid 1000; `sudo chown -R 1000 data`.
+- **Linux host, "cannot write to /data"**: the container runs as uid 1000 and `./data` was created by Docker as root; `sudo chown -R 1000 data`. The input check runs first, so a missing `books.parquet` is still reported as such.
+- **`embed.query` says the index is incomplete or `meta.json` lacks a key**: the output folder is from an interrupted or older run; re-run `docker compose run --rm embed`.
 - **Windows, "Access is denied" when renaming**: Chroma held files open; `release_chroma()` is called before every rename. Report it if you still see this.
 - **Image is several GB**: torch isn't the `+cpu` build; check `[tool.uv.sources]` in `pyproject.toml`.
 - **Windows warning "To support symlinks on Windows…"** during local runs: harmless; the Hugging Face model cache copies files instead of linking them.

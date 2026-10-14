@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import subprocess
 from collections.abc import Mapping
@@ -16,6 +17,27 @@ DEFAULT_EXAMPLE_QUERIES = (
     "a young wizard discovering hidden powers at a magic school",
 )
 _TRUE = {"1", "true", "yes"}
+_PACKAGE_DIR = Path(__file__).resolve().parent
+
+
+class ConfigError(ValueError):
+    """An environment variable has an unusable value; the run stops with exit code 1."""
+
+
+def _batch_size(raw: str) -> int:
+    value = raw.strip()
+    if not value.isdigit() or int(value) < 1:
+        raise ConfigError(f"EMBED_BATCH_SIZE must be a whole number of at least 1, got {raw!r}")
+    return int(value)
+
+
+def _source_hash() -> str:
+    """Fingerprint of this package's code, used when git is unavailable (e.g. in Docker)."""
+    digest = hashlib.sha256()
+    for path in sorted(_PACKAGE_DIR.glob("*.py")):
+        digest.update(path.name.encode("utf-8"))
+        digest.update(path.read_bytes())
+    return "src-sha256:" + digest.hexdigest()[:12]
 
 
 def _git_sha() -> str | None:
@@ -50,8 +72,8 @@ class Settings:
             output_dir=Path(env.get("EMBED_OUTPUT_DIR", "/data/embeddings")),
             model_name=env.get("EMBED_MODEL", DEFAULT_MODEL),
             model_revision=env.get("EMBED_MODEL_REVISION", DEFAULT_MODEL_REVISION),
-            batch_size=int(env.get("EMBED_BATCH_SIZE", "64")),
+            batch_size=_batch_size(env.get("EMBED_BATCH_SIZE", "64")),
             example_queries=queries or DEFAULT_EXAMPLE_QUERIES,
             evidence_excerpts=env.get("EMBED_EVIDENCE_EXCERPTS", "").strip().lower() in _TRUE,
-            code_version=env.get("EMBED_CODE_VERSION") or _git_sha(),
+            code_version=env.get("EMBED_CODE_VERSION") or _git_sha() or _source_hash(),
         )

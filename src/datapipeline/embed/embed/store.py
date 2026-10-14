@@ -10,6 +10,7 @@ import chromadb
 import numpy as np
 import pandas as pd
 from chromadb.api.client import SharedSystemClient
+from chromadb.errors import NotFoundError
 
 from embed.texts import is_missing
 
@@ -76,7 +77,13 @@ def open_collection(chroma_dir: Path):
         raise FileNotFoundError(
             f"No vector index at {chroma_dir}; run `python -m embed.run` first."
         )
-    return chromadb.PersistentClient(path=str(chroma_dir)).get_collection(COLLECTION_NAME)
+    try:
+        return chromadb.PersistentClient(path=str(chroma_dir)).get_collection(COLLECTION_NAME)
+    except NotFoundError as exc:
+        raise FileNotFoundError(
+            f"{chroma_dir} has no `{COLLECTION_NAME}` collection (incomplete run?); "
+            "re-run `python -m embed.run`."
+        ) from exc
 
 
 def search(collection, query_embedding, k: int = 5, genre: str | None = None) -> list[dict]:
