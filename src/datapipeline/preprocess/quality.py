@@ -11,7 +11,9 @@ spec.md section 8.
 
 from __future__ import annotations
 
+import ast
 import html
+import json
 import math
 import re
 
@@ -135,9 +137,25 @@ def _parse_count(raw: object) -> float | None:
     return None
 
 
+def _parse_list_string(text: str) -> object:
+    """A shelf list saved as text (JSON or Python repr) -> the list; anything else -> text."""
+    if not text.lstrip().startswith("["):
+        return text
+    for parse in (json.loads, ast.literal_eval):
+        try:
+            parsed = parse(text)
+        except (ValueError, SyntaxError, MemoryError, RecursionError):
+            continue
+        if isinstance(parsed, list):
+            return parsed
+    return text
+
+
 def _entries(popular_shelves: object) -> list:
     if _is_missing(popular_shelves):
         return []
+    if isinstance(popular_shelves, str):
+        popular_shelves = _parse_list_string(popular_shelves)
     if isinstance(popular_shelves, (str, dict)):
         return [popular_shelves]
     return list(popular_shelves)
@@ -150,8 +168,10 @@ def _clean_shelves_with_stats(
     counts: dict[str, float] = {}
     raw_total = 0
     unknown = 0
-    for entry in _entries(popular_shelves):
-        if isinstance(entry, str):
+    entries = _entries(popular_shelves)
+    has_records = any(isinstance(entry, dict) for entry in entries)
+    for entry in entries:
+        if isinstance(entry, str) and not has_records:
             name, count = entry, math.inf
         elif isinstance(entry, dict) and isinstance(entry.get("name"), str):
             name, count = entry["name"], _parse_count(entry.get("count"))
@@ -174,8 +194,9 @@ def _clean_shelves_with_stats(
 def clean_shelves(popular_shelves: object, min_count: int = 3, top_n: int = 20) -> list[str]:
     """Clean one book's shelves.
 
-    Accepts the raw Goodreads list [{"name": str, "count": str|int}, ...] or a plain
-    list of names (each counted as infinitely popular). Normalizes, drops generic
+    Accepts the raw Goodreads list [{"name": str, "count": str|int}, ...] (also as a
+    JSON / Python-repr string) or a plain list of names (each counted as infinitely
+    popular). A bare name inside a list of records has no count and is skipped. Normalizes, drops generic
     shelves, merges duplicates, drops counts below min_count, keeps the top_n.
     """
     kept, _, _ = _clean_shelves_with_stats(popular_shelves, min_count, top_n)
@@ -197,8 +218,10 @@ def add_quality_flags(
     """Clean descriptions and shelves and add the two quality columns.
 
     Returns (books_copy, summary). The copy has the same rows, order and index;
-    `description` and `shelves` are replaced by cleaned versions and two columns
-    are added: `has_description` (bool) and `description_issue` (None,
+    the cleaned text and shelves are always written to the contract columns
+    `description` and `shelves` (when description_col / shelves_col name other
+    columns, those raw columns are left untouched for the caller to drop), and two
+    columns are added: `has_description` (bool) and `description_issue` (None,
     "missing" or "too_short"). The input frame is never modified. Store the
     summary under manifest.json["quality"].
     """
@@ -209,7 +232,7 @@ def add_quality_flags(
     out = books.copy()
 
     checked = [check_description(text, min_description_chars) for text in out[description_col]]
-    out[description_col] = pd.Series(
+    out["description"] = pd.Series(
         [clean for clean, _ in checked], index=out.index, dtype="string"
     )
     out["description_issue"] = pd.Series(
@@ -221,7 +244,7 @@ def add_quality_flags(
         _clean_shelves_with_stats(value, min_shelf_count, top_n_shelves)
         for value in out[shelves_col]
     ]
-    out[shelves_col] = pd.Series(
+    out["shelves"] = pd.Series(
         [kept for kept, _, _ in shelf_results], index=out.index, dtype=object
     )
 

@@ -283,3 +283,38 @@ def test_parquet_round_trip(tmp_path):
         "ok", "too_short", "missing", "missing"
     ]
     assert [list(x) for x in back["shelves"]] == [["heist"], ["fantasy"], [], []]
+
+
+# ------------------------------------------------- follow-up fixes (Oct 13)
+
+
+def test_custom_shelves_col_writes_contract_columns():
+    raw = _books().rename(columns={"shelves": "popular_shelves", "description": "desc_raw"})
+    out, _ = add_quality_flags(raw, shelves_col="popular_shelves", description_col="desc_raw")
+    assert out["shelves"].tolist() == [["heist"], ["fantasy"], [], []]
+    assert out["description"].iloc[0] == "A crew of con artists plans an impossible robbery."
+    # the raw source columns are left untouched for the caller to drop
+    pd.testing.assert_series_equal(out["popular_shelves"], raw["popular_shelves"])
+    pd.testing.assert_series_equal(out["desc_raw"], raw["desc_raw"])
+
+
+def test_json_string_shelves_are_parsed():
+    as_json = json.dumps([{"name": "heist", "count": "10"}, {"name": "to-read", "count": "99"}])
+    assert clean_shelves(as_json) == ["heist"]
+
+
+def test_python_repr_string_shelves_are_parsed():
+    as_repr = "[{'name': 'heist', 'count': '10'}, {'name': 'favorites', 'count': '50'}]"
+    assert clean_shelves(as_repr) == ["heist"]
+
+
+def test_plain_string_shelf_is_still_one_name():
+    assert clean_shelves("fantasy") == ["fantasy"]
+
+
+def test_bare_string_inside_record_list_is_unknown_not_infinite():
+    books = _books().iloc[:1].copy()
+    books["shelves"] = [[{"name": "heist", "count": "10"}, "romance"]]
+    out, summary = add_quality_flags(books)
+    assert out["shelves"].iloc[0] == ["heist"]
+    assert summary["n_unknown_shelf_entries"] == 1
