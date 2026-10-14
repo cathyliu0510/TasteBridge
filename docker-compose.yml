@@ -1,0 +1,20 @@
+# One-command run for TasteBridge:  docker compose up --build  (or: docker-compose up --build)
+# Teammates: add the frontend and pipeline services below.
+services:
+  backend:
+    build: ./src/backend
+    ports:
+      - "9000:9000"
+    environment:
+      ARTIFACT_DIR: /app/sample_artifacts
+      CORS_ORIGINS: "*"
+    volumes:
+      - feedback:/app/feedback   # keeps votes across restarts and rebuilds
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  feedback:

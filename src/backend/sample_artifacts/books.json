@@ -1,0 +1,658 @@
+[
+  {
+    "book_id": "w_1001",
+    "title": "Mistborn: The Final Empire",
+    "author": "Brandon Sanderson",
+    "shelves": [
+      "epic-fantasy",
+      "fantasy",
+      "magic-system",
+      "heist",
+      "found-family",
+      "adventure"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1002",
+    "title": "The Name of the Wind",
+    "author": "Patrick Rothfuss",
+    "shelves": [
+      "epic-fantasy",
+      "fantasy",
+      "magic",
+      "coming-of-age",
+      "adventure",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1003",
+    "title": "The Hobbit",
+    "author": "J. R. R. Tolkien",
+    "shelves": [
+      "fantasy",
+      "adventure",
+      "coming-of-age",
+      "classics"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1004",
+    "title": "A Wizard of Earthsea",
+    "author": "Ursula K. Le Guin",
+    "shelves": [
+      "fantasy",
+      "magic",
+      "coming-of-age",
+      "classics",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1005",
+    "title": "The Magicians",
+    "author": "Lev Grossman",
+    "shelves": [
+      "fantasy",
+      "magic",
+      "coming-of-age",
+      "dark",
+      "relationships"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1006",
+    "title": "Six of Crows",
+    "author": "Leigh Bardugo",
+    "shelves": [
+      "fantasy",
+      "heist",
+      "found-family",
+      "con-artist",
+      "fast-paced",
+      "young-adult"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1007",
+    "title": "American Gods",
+    "author": "Neil Gaiman",
+    "shelves": [
+      "fantasy",
+      "mythology",
+      "dark",
+      "adventure",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1008",
+    "title": "The Ocean at the End of the Lane",
+    "author": "Neil Gaiman",
+    "shelves": [
+      "fantasy",
+      "dark",
+      "coming-of-age",
+      "literary-fiction",
+      "fairy-tale"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1009",
+    "title": "Jonathan Strange & Mr Norrell",
+    "author": "Susanna Clarke",
+    "shelves": [
+      "fantasy",
+      "magic",
+      "historical",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1010",
+    "title": "The Way of Kings",
+    "author": "Brandon Sanderson",
+    "shelves": [
+      "epic-fantasy",
+      "fantasy",
+      "magic-system",
+      "adventure"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1011",
+    "title": "The Fellowship of the Ring",
+    "author": "J. R. R. Tolkien",
+    "shelves": [
+      "epic-fantasy",
+      "fantasy",
+      "adventure",
+      "classics"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1012",
+    "title": "A Game of Thrones",
+    "author": "George R. R. Martin",
+    "shelves": [
+      "epic-fantasy",
+      "fantasy",
+      "dark",
+      "politics",
+      "relationships"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1013",
+    "title": "Uprooted",
+    "author": "Naomi Novik",
+    "shelves": [
+      "fantasy",
+      "magic",
+      "fairy-tale",
+      "relationships"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1014",
+    "title": "The Blade Itself",
+    "author": "Joe Abercrombie",
+    "shelves": [
+      "epic-fantasy",
+      "fantasy",
+      "dark",
+      "adventure"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1015",
+    "title": "Harry Potter and the Sorcerer's Stone",
+    "author": "J. K. Rowling",
+    "shelves": [
+      "fantasy",
+      "magic",
+      "coming-of-age",
+      "found-family",
+      "young-adult"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1016",
+    "title": "Stardust",
+    "author": "Neil Gaiman",
+    "shelves": [
+      "fantasy",
+      "fairy-tale",
+      "adventure",
+      "relationships"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1017",
+    "title": "The Golden Compass",
+    "author": "Philip Pullman",
+    "shelves": [
+      "fantasy",
+      "adventure",
+      "coming-of-age",
+      "young-adult"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1018",
+    "title": "Assassin's Apprentice",
+    "author": "Robin Hobb",
+    "shelves": [
+      "epic-fantasy",
+      "fantasy",
+      "magic",
+      "coming-of-age"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1019",
+    "title": "The Lion, the Witch and the Wardrobe",
+    "author": "C. S. Lewis",
+    "shelves": [
+      "fantasy",
+      "classics",
+      "adventure",
+      "coming-of-age",
+      "fairy-tale"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_1020",
+    "title": "Throne of Glass",
+    "author": "Sarah J. Maas",
+    "shelves": [
+      "fantasy",
+      "magic",
+      "young-adult",
+      "adventure",
+      "fast-paced"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2001",
+    "title": "Gone Girl",
+    "author": "Gillian Flynn",
+    "shelves": [
+      "mystery",
+      "psychological-thriller",
+      "unreliable-narrator",
+      "twists",
+      "dark",
+      "relationships",
+      "fast-paced"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2002",
+    "title": "The Girl on the Train",
+    "author": "Paula Hawkins",
+    "shelves": [
+      "mystery",
+      "psychological-thriller",
+      "unreliable-narrator",
+      "twists",
+      "fast-paced"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2003",
+    "title": "Rebecca",
+    "author": "Daphne du Maurier",
+    "shelves": [
+      "mystery",
+      "gothic",
+      "classics",
+      "relationships",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2004",
+    "title": "Murder on the Orient Express",
+    "author": "Agatha Christie",
+    "shelves": [
+      "mystery",
+      "detective",
+      "classics",
+      "twists"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2005",
+    "title": "Sharp Objects",
+    "author": "Gillian Flynn",
+    "shelves": [
+      "mystery",
+      "psychological-thriller",
+      "dark",
+      "crime"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2006",
+    "title": "And Then There Were None",
+    "author": "Agatha Christie",
+    "shelves": [
+      "mystery",
+      "classics",
+      "twists",
+      "dark"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2007",
+    "title": "The Da Vinci Code",
+    "author": "Dan Brown",
+    "shelves": [
+      "thriller",
+      "mystery",
+      "historical",
+      "adventure",
+      "fast-paced"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2008",
+    "title": "The Girl with the Dragon Tattoo",
+    "author": "Stieg Larsson",
+    "shelves": [
+      "crime",
+      "thriller",
+      "mystery",
+      "dark"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2009",
+    "title": "Big Little Lies",
+    "author": "Liane Moriarty",
+    "shelves": [
+      "mystery",
+      "relationships",
+      "twists"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2010",
+    "title": "In the Woods",
+    "author": "Tana French",
+    "shelves": [
+      "mystery",
+      "crime",
+      "detective",
+      "psychological-thriller",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2011",
+    "title": "The Cuckoo's Calling",
+    "author": "Robert Galbraith",
+    "shelves": [
+      "mystery",
+      "detective",
+      "crime"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2012",
+    "title": "The Hound of the Baskervilles",
+    "author": "Arthur Conan Doyle",
+    "shelves": [
+      "mystery",
+      "detective",
+      "classics",
+      "gothic"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2013",
+    "title": "The Talented Mr. Ripley",
+    "author": "Patricia Highsmith",
+    "shelves": [
+      "crime",
+      "psychological-thriller",
+      "con-artist",
+      "classics"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2014",
+    "title": "Dark Places",
+    "author": "Gillian Flynn",
+    "shelves": [
+      "mystery",
+      "crime",
+      "dark",
+      "psychological-thriller"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2015",
+    "title": "The Secret History",
+    "author": "Donna Tartt",
+    "shelves": [
+      "literary-fiction",
+      "mystery",
+      "dark",
+      "relationships"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2016",
+    "title": "Before I Go to Sleep",
+    "author": "S. J. Watson",
+    "shelves": [
+      "psychological-thriller",
+      "unreliable-narrator",
+      "twists",
+      "mystery"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2017",
+    "title": "The Big Sleep",
+    "author": "Raymond Chandler",
+    "shelves": [
+      "crime",
+      "detective",
+      "classics",
+      "noir"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_2018",
+    "title": "Shutter Island",
+    "author": "Dennis Lehane",
+    "shelves": [
+      "psychological-thriller",
+      "unreliable-narrator",
+      "twists",
+      "mystery",
+      "dark"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3001",
+    "title": "The Lies of Locke Lamora",
+    "author": "Scott Lynch",
+    "shelves": [
+      "fantasy",
+      "heist",
+      "found-family",
+      "con-artist",
+      "adventure",
+      "twists"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3002",
+    "title": "Neverwhere",
+    "author": "Neil Gaiman",
+    "shelves": [
+      "urban-fantasy",
+      "fantasy",
+      "mystery",
+      "dark",
+      "adventure"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3003",
+    "title": "The Rook",
+    "author": "Daniel O'Malley",
+    "shelves": [
+      "urban-fantasy",
+      "mystery",
+      "twists",
+      "fast-paced"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3004",
+    "title": "The City & the City",
+    "author": "China Miéville",
+    "shelves": [
+      "fantasy",
+      "mystery",
+      "detective",
+      "crime",
+      "literary-fiction",
+      "noir"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3005",
+    "title": "The Night Circus",
+    "author": "Erin Morgenstern",
+    "shelves": [
+      "fantasy",
+      "magic",
+      "relationships",
+      "historical",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3006",
+    "title": "The Shadow of the Wind",
+    "author": "Carlos Ruiz Zafón",
+    "shelves": [
+      "mystery",
+      "gothic",
+      "historical",
+      "literary-fiction",
+      "relationships"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3007",
+    "title": "Storm Front",
+    "author": "Jim Butcher",
+    "shelves": [
+      "urban-fantasy",
+      "magic",
+      "detective",
+      "mystery",
+      "fast-paced",
+      "noir"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3008",
+    "title": "Rivers of London",
+    "author": "Ben Aaronovitch",
+    "shelves": [
+      "urban-fantasy",
+      "magic",
+      "detective",
+      "crime",
+      "mystery"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3009",
+    "title": "The Thirteenth Tale",
+    "author": "Diane Setterfield",
+    "shelves": [
+      "gothic",
+      "mystery",
+      "historical",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3010",
+    "title": "The Eyre Affair",
+    "author": "Jasper Fforde",
+    "shelves": [
+      "fantasy",
+      "mystery",
+      "detective",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3011",
+    "title": "The Name of the Rose",
+    "author": "Umberto Eco",
+    "shelves": [
+      "mystery",
+      "historical",
+      "detective",
+      "literary-fiction",
+      "classics"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3012",
+    "title": "The Historian",
+    "author": "Elizabeth Kostova",
+    "shelves": [
+      "gothic",
+      "historical",
+      "mystery",
+      "dark",
+      "fantasy"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3013",
+    "title": "Something Wicked This Way Comes",
+    "author": "Ray Bradbury",
+    "shelves": [
+      "dark",
+      "fantasy",
+      "coming-of-age",
+      "classics",
+      "gothic"
+    ],
+    "cover_url": null
+  },
+  {
+    "book_id": "w_3014",
+    "title": "Mr. Penumbra's 24-Hour Bookstore",
+    "author": "Robin Sloan",
+    "shelves": [
+      "mystery",
+      "adventure",
+      "literary-fiction"
+    ],
+    "cover_url": null
+  }
+]
