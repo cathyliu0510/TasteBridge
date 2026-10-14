@@ -1,0 +1,15 @@
+\section*{Data Sources}
+
+We will use the \href{https://cseweb.ucsd.edu/~jmcauley/datasets/goodreads.html}{UCSD Goodreads Book Graph}~\cite{wan2018, wan2019} dataset, limited to academic use with no redistribution, collected from public shelves in late 2017. It records individual histories, so we will evaluate simulated pairs and use a small study with real readers to check joint acceptance. Deploying the app requires versioned data, reproducible training, and should return recommendations from the saved model. These genre subsets are available as public gzip-compressed JSON downloads:
+
+\begin{center}\small 
+    \begin{tabular}{@{}lrrl@{}} 
+    \toprule 
+    Subset & Books & Interactions & Downloads \\ 
+    \midrule 
+    Fantasy \& Paranormal & 258,585 & 55,397,550 & \href{https://mcauleylab.ucsd.edu/public_datasets/gdrive/goodreads/byGenre/goodreads_books_fantasy_paranormal.json.gz}{Metadata} / \href{https://mcauleylab.ucsd.edu/public_datasets/gdrive/goodreads/byGenre/goodreads_interactions_fantasy_paranormal.json.gz}{Interactions} \\ 
+    Mystery, Thriller \& Crime & 219,235 & 24,799,896 & \href{https://mcauleylab.ucsd.edu/public_datasets/gdrive/goodreads/byGenre/goodreads_books_mystery_thriller_crime.json.gz}{Metadata} / \href{https://mcauleylab.ucsd.edu/public_datasets/gdrive/goodreads/byGenre/goodreads_interactions_mystery_thriller_crime.json.gz}{Interactions} \\ 
+    \bottomrule 
+    \end{tabular}
+\end{center} 
+Counts are before filtering; the subsets overlap and cannot be summed as unique totals. Interactions \path{user_id}, \path{book_id}, \path{rating}, \path{is_read}) support collaborative training. Titles, authors, descriptions and shelf tags supply content features and explanation evidence; files join on \path{book_id}.\par\smallskip For the MVP, we plan a catalogue of at most 5,000 distinct works from these genres, with each reader choosing five favorites from that catalogue. Training will use at most 500,000 historical interactions; actual retained counts will be reported after filtering. We will remove cross-genre duplicates, group editions by \path{work_id} before evaluation, and flag missing descriptions and noisy shelf tags. Older data and popularity bias may limit coverage.\par\smallskip 

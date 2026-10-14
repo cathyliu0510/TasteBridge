@@ -1,0 +1,15 @@
+\section*{Limitations, Risks and Ethics}
+
+{\tablestyle
+\begin{xltabular}{\linewidth}{@{}L{2.5cm}Y@{}}
+\toprule
+\textbf{Concern} & \textbf{Mitigation} \\
+\midrule
+Privacy \& license & No accounts or stored names, emails or reading histories, only optional votes linked to book IDs; data used for academic work only, never redistributed. \\
+Benefits \& bias & Readers choose a shared book faster, but collaborative filtering may favor popular books over lesser-known authors; we measure long-tail coverage and test popularity-aware reranking. \\
+Reader fairness & Average aggregation may favor one reader, so we compare it with least-misery aggregation and use Min-Recall@10 to expose unequal performance. \\
+Sparse input & Five favorites may not define a stable taste profile; we add content features, keep item-kNN as a fallback, and report performance by input size. \\
+Edition leakage & Editions of the same work are merged before splitting, with a leakage test. \\
+Frontend scope & A 3-D map may delay core work, so we first build a 2-D map from the model's embeddings and add 3-D only if time permits. \\
+\bottomrule
+\end{xltabular}}

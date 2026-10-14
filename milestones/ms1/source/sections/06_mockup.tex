@@ -1,0 +1,136 @@
+% ================================================================
+% Application Mockup: wireframes on the left, description on the right
+% ================================================================
+% \section*{Application Mockup}
+
+\begin{figure}[H]
+\centering
+\begin{minipage}[c]{0.70\textwidth}
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+    x=1cm, y=1cm,
+    frame/.style={draw=gray!70, rounded corners=3pt, fill=white},
+    btn/.style={draw, rounded corners=2pt, inner sep=3pt, font=\scriptsize},
+    flow/.style={-{Stealth[length=2mm]}, thick, gray!70},
+]
+\colorlet{colA}{RoyalBlue}
+\colorlet{colB}{Orange}
+
+% ---------- reusable window chrome: #1 = x, #2 = y, #3 = label ----------
+\def\screen#1#2#3{%
+  \draw[frame] (#1,#2) rectangle ++(8,4.4);
+  \draw[gray!70] (#1,#2+4.05) -- ++(8,0);
+  \foreach \k in {0,1,2} \fill[gray!45] (#1+0.2+0.18*\k,#2+4.225) circle (0.05);
+  \node[font=\scriptsize\bfseries, gray!80!black] at (#1+4,#2+4.225) {#3};
+}
+% ---------- fit bar: #1 = x, #2 = y, #3 = filled, #4 = colour ----------
+\def\fitbar#1#2#3#4{%
+  \foreach \k in {1,...,5}{
+    \ifnum\k>#3 \draw[#4] (#1+0.1+0.2*\k,#2-0.07) rectangle ++(0.14,0.14);
+    \else \fill[#4] (#1+0.1+0.2*\k,#2-0.07) rectangle ++(0.14,0.14); \fi }
+}
+
+% ================= 1. LANDING =================
+\screen{0}{5}{1 \; Landing}
+\begin{scope}[shift={(0,5)}]
+  \foreach \p in {(0.8,3.4),(1.5,0.6),(7.2,3.3),(6.6,0.9),(0.5,1.8),(7.5,2.0)}
+    \fill[gray!35] \p circle (0.04);
+  \node[font=\Large\bfseries] at (4,3.15) {T\,a\,s\,t\,e\,B\,r\,i\,d\,g\,e};
+  \node[font=\scriptsize\itshape, gray!60!black] at (4,2.55)
+       {Two readers. Five favourites each. One next book.};
+  \node[btn, fill=colA, draw=colA, text=white] at (4,1.7)
+       {Start with a friend $\rightarrow$};
+  \node[font=\tiny, gray] at (4,0.75)
+       {anonymous \,$\cdot$\, nothing saved \,$\cdot$\, fantasy \& mystery};
+\end{scope}
+
+% ================= 2. PICK YOUR FIVE =================
+\screen{8.9}{5}{2 \; Pick your five}
+\begin{scope}[shift={(8.9,5)}]
+  \node[anchor=west, font=\scriptsize\bfseries, colA] at (0.25,3.65) {Reader A};
+  \foreach \k in {1,...,5}{
+    \ifnum\k<4 \fill[colA] (1.8+0.22*\k,3.65) circle (0.07);
+    \else \draw[colA] (1.8+0.22*\k,3.65) circle (0.07); \fi }
+  \node[anchor=west, font=\scriptsize, gray] at (3.2,3.65) {3 of 5};
+  \node[anchor=west, font=\scriptsize\bfseries, colB] at (4.9,3.65) {Reader B};
+  \foreach \k in {1,...,5} \draw[colB] (6.35+0.22*\k,3.65) circle (0.07);
+  % search box
+  \draw[gray!60, rounded corners=2pt] (0.25,2.9) rectangle (7.75,3.3);
+  \draw[gray] (0.45,3.12) circle (0.07); \draw[gray] (0.5,3.07) -- (0.58,2.99);
+  \node[anchor=west, font=\scriptsize, gray] at (0.65,3.1) {search title or author\ldots};
+  % results
+  \foreach \y/\t/\s in {2.4/{Mistborn: The Final Empire --- B.\ Sanderson}/1,
+                         1.8/{The Name of the Wind --- P.\ Rothfuss}/1,
+                         1.2/{Gone Girl --- G.\ Flynn}/0}{
+    \fill[gray!30] (0.3,\y-0.22) rectangle (0.6,\y+0.22);
+    \node[anchor=west, font=\scriptsize] at (0.75,\y) {\t};
+    \ifnum\s=1 \node[circle, fill=colA, text=white, inner sep=1pt, font=\tiny] at (7.45,\y) {$\checkmark$};
+    \else \node[circle, draw=gray, inner sep=1pt, font=\tiny] at (7.45,\y) {$+$}; \fi }
+  \node[btn, anchor=east] at (7.75,0.4) {Next: Reader B $\rightarrow$};
+\end{scope}
+
+% ================= 3. TASTE GALAXY =================
+\screen{0}{0}{3 \; Taste galaxy}
+\begin{scope}[shift={(0,0)}]
+  \fill[black!82] (0,0.6) rectangle (8,4.05);
+  \pgfmathsetseed{215}
+  \foreach \i in {1,...,40} \fill[white!60] ({0.1+7.8*rnd},{0.7+3.25*rnd}) circle (0.012);
+  \foreach \i in {1,...,14} \fill[colA!60] ({1.7+0.75*rand},{2.35+0.8*rand}) circle (0.03);
+  \foreach \i in {1,...,14} \fill[colB!60] ({6.3+0.75*rand},{2.35+0.8*rand}) circle (0.03);
+  \foreach \p in {(1.2,2.9),(1.9,1.8),(2.3,2.7),(1.4,2.2),(2.0,3.2)}
+    \fill[colA] \p circle (0.07);
+  \foreach \p in {(5.8,2.9),(6.6,1.8),(6.9,2.6),(6.1,2.2),(6.5,3.2)}
+    \fill[colB] \p circle (0.07);
+  \node[font=\scriptsize\bfseries, colA] at (1.75,1.2) {A's picks};
+  \node[font=\scriptsize\bfseries, colB] at (6.3,1.2) {B's picks};
+  \foreach \p/\n in {(3.5,2.9)/1,(4.4,3.2)/2,(4.0,2.3)/3,(3.3,1.7)/4,(4.6,1.6)/5}{
+    \fill[yellow!80, opacity=0.25] \p circle (0.17);
+    \fill[yellow!90!white] \p circle (0.08);
+    \node[font=\tiny, white, anchor=south west, inner sep=1pt] at \p {\n}; }
+  \node[font=\tiny, gray!60] at (4,0.8) {drag to rotate \,$\cdot$\, scroll to zoom \,$\cdot$\, hover a star for its title};
+  \node[anchor=west, font=\scriptsize] at (0.2,0.3) {\textbf{Bridge picks:} 1 \; 2 \; 3 \; 4 \; 5};
+  \node[anchor=west, font=\scriptsize, colA] at (4.3,0.3) {A}; \fitbar{4.45}{0.3}{4}{colA}
+  \node[anchor=west, font=\scriptsize, colB] at (5.8,0.3) {B}; \fitbar{5.95}{0.3}{5}{colB}
+\end{scope}
+
+% ================= 4. WHY THIS BOOK? =================
+\screen{8.9}{0}{4 \; Why this book?}
+\begin{scope}[shift={(8.9,0)}]
+  \fill[gray!30] (0.3,2.55) rectangle (1.2,3.8);
+  \node[anchor=west, font=\small\bfseries] at (1.4,3.55) {The Lies of Locke Lamora};
+  \node[anchor=west, font=\scriptsize, gray!60!black] at (1.4,3.15) {Scott Lynch \,$\cdot$\, bridge pick 3};
+  \node[anchor=north west, text width=6.2cm, font=\scriptsize, align=left] at (1.35,2.8)
+    {\textcolor{colA}{\textbf{For A:}} heist-driven fantasy like \emph{Mistborn}
+     (shared shelves: heist, found-family)};
+  \node[anchor=north west, text width=6.2cm, font=\scriptsize, align=left] at (1.35,2.05)
+    {\textcolor{colB}{\textbf{For B:}} twisty con-artist plot and unreliable
+     characters, like \emph{Gone Girl}};
+  \node[anchor=west, font=\scriptsize] at (0.3,0.95) {Fit};
+  \node[anchor=west, font=\scriptsize, colA] at (0.8,0.95) {A}; \fitbar{0.95}{0.95}{4}{colA}
+  \node[anchor=west, font=\scriptsize, colB] at (2.2,0.95) {B}; \fitbar{2.35}{0.95}{4}{colB}
+  \node[btn, fill=colA!12] at (5.0,0.95) {We'd read this};
+  \node[btn] at (6.85,0.95) {Not for us};
+  \node[anchor=west, font=\tiny, gray] at (0.3,0.35)
+    {Reasons come only from shared authors, shelf tags and picked books.};
+\end{scope}
+
+% ================= flow arrows =================
+\draw[flow] (8.05,7.2) -- (8.85,7.2);
+\draw[flow] (12.9,4.95) |- (4,4.7) -- (4,4.45);
+\draw[flow] (8.05,2.45) -- (8.85,2.45);
+\draw[flow] (8.85,1.95) -- (8.05,1.95);
+\end{tikzpicture}
+}
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.23\textwidth}
+\small\raggedright
+The app has four screens. Each reader picks five books, a taste galaxy shows
+both readers' picks alongside five bridge books, and tapping a bridge book
+explains why each reader should like it. The galaxy uses the recommender's own embeddings, so the picture always
+matches the ranking. Feedback buttons store only book IDs and votes.
+\end{minipage}
+\caption{Wireframes of the user flow: landing $\rightarrow$ each reader picks
+five $\rightarrow$ taste galaxy $\leftrightarrow$ per-reader explanation card.}
+\label{fig:mockup}
+\end{figure}

@@ -1,0 +1,403 @@
+{
+  "checkedAt": "2026-10-12T18:16:51.733Z",
+  "backendCommit": "a9f1620dc2ea3070c600f7cca5128805cc8b74a0",
+  "spec": "DRAFT v0.3",
+  "health": {
+    "status": "ok",
+    "modelVersion": "sample-shelf-toy-v1",
+    "numBooks": 52
+  },
+  "fixtureOnly": true,
+  "checks": [
+    "empty search",
+    "title search",
+    "10 book details",
+    "5 least-misery recommendations",
+    "5 average recommendations",
+    "per-reader reason ownership and shared shelves",
+    "15 server galaxy points",
+    "404 unknown ID recovery",
+    "explicit anonymous test feedback"
+  ],
+  "sampleInput": {
+    "reader_a": [
+      "w_1001",
+      "w_1002",
+      "w_1003",
+      "w_1004",
+      "w_1005"
+    ],
+    "reader_b": [
+      "w_2001",
+      "w_2002",
+      "w_2003",
+      "w_2004",
+      "w_2005"
+    ],
+    "k": 5,
+    "aggregation": "least_misery"
+  },
+  "sampleOutput": {
+    "modelVersion": "sample-shelf-toy-v1",
+    "mode": "least-misery",
+    "topShelves": {
+      "a": [
+        "fantasy",
+        "coming-of-age",
+        "adventure"
+      ],
+      "b": [
+        "mystery",
+        "psychological-thriller",
+        "twists"
+      ]
+    },
+    "results": [
+      {
+        "rank": 1,
+        "book": {
+          "id": "w_3002",
+          "title": "Neverwhere",
+          "author": "Neil Gaiman",
+          "year": null,
+          "coverUrl": null,
+          "tags": [
+            "urban-fantasy",
+            "fantasy",
+            "mystery",
+            "dark",
+            "adventure"
+          ]
+        },
+        "score": 0.3772,
+        "fitA": 0.4063,
+        "fitB": 0.3772,
+        "reasons": {
+          "a": {
+            "seedId": "w_1003",
+            "seedTitle": "The Hobbit",
+            "sameAuthor": false,
+            "tags": [
+              "fantasy",
+              "adventure"
+            ],
+            "text": "Closest to your pick The Hobbit; shared shelves: fantasy, adventure.",
+            "source": "Catalogue metadata."
+          },
+          "b": {
+            "seedId": "w_2005",
+            "seedTitle": "Sharp Objects",
+            "sameAuthor": false,
+            "tags": [
+              "mystery",
+              "dark"
+            ],
+            "text": "Closest to your pick Sharp Objects; shared shelves: mystery, dark.",
+            "source": "Catalogue metadata."
+          }
+        },
+        "position": {
+          "x": 0.08160259574651718,
+          "y": -0.4368273615837097
+        }
+      },
+      {
+        "rank": 2,
+        "book": {
+          "id": "w_3010",
+          "title": "The Eyre Affair",
+          "author": "Jasper Fforde",
+          "year": null,
+          "coverUrl": null,
+          "tags": [
+            "fantasy",
+            "mystery",
+            "detective",
+            "literary-fiction"
+          ]
+        },
+        "score": 0.3375,
+        "fitA": 0.3375,
+        "fitB": 0.4789,
+        "reasons": {
+          "a": {
+            "seedId": "w_1004",
+            "seedTitle": "A Wizard of Earthsea",
+            "sameAuthor": false,
+            "tags": [
+              "fantasy",
+              "literary-fiction"
+            ],
+            "text": "Closest to your pick A Wizard of Earthsea; shared shelves: fantasy, literary-fiction.",
+            "source": "Catalogue metadata."
+          },
+          "b": {
+            "seedId": "w_2004",
+            "seedTitle": "Murder on the Orient Express",
+            "sameAuthor": false,
+            "tags": [
+              "mystery",
+              "detective"
+            ],
+            "text": "Closest to your pick Murder on the Orient Express; shared shelves: mystery, detective.",
+            "source": "Catalogue metadata."
+          }
+        },
+        "position": {
+          "x": -0.27676117420196533,
+          "y": 0.5223343372344971
+        }
+      },
+      {
+        "rank": 3,
+        "book": {
+          "id": "w_3014",
+          "title": "Mr. Penumbra's 24-Hour Bookstore",
+          "author": "Robin Sloan",
+          "year": null,
+          "coverUrl": null,
+          "tags": [
+            "mystery",
+            "adventure",
+            "literary-fiction"
+          ]
+        },
+        "score": 0.3272,
+        "fitA": 0.3272,
+        "fitB": 0.4247,
+        "reasons": {
+          "a": {
+            "seedId": "w_1002",
+            "seedTitle": "The Name of the Wind",
+            "sameAuthor": false,
+            "tags": [
+              "adventure",
+              "literary-fiction"
+            ],
+            "text": "Closest to your pick The Name of the Wind; shared shelves: adventure, literary-fiction.",
+            "source": "Catalogue metadata."
+          },
+          "b": {
+            "seedId": "w_2003",
+            "seedTitle": "Rebecca",
+            "sameAuthor": false,
+            "tags": [
+              "mystery",
+              "literary-fiction"
+            ],
+            "text": "Closest to your pick Rebecca; shared shelves: mystery, literary-fiction.",
+            "source": "Catalogue metadata."
+          }
+        },
+        "position": {
+          "x": -0.18319353461265564,
+          "y": 0.22644785046577454
+        }
+      },
+      {
+        "rank": 4,
+        "book": {
+          "id": "w_3004",
+          "title": "The City & the City",
+          "author": "China Miéville",
+          "year": null,
+          "coverUrl": null,
+          "tags": [
+            "fantasy",
+            "mystery",
+            "detective",
+            "crime",
+            "literary-fiction",
+            "noir"
+          ]
+        },
+        "score": 0.3219,
+        "fitA": 0.3219,
+        "fitB": 0.4102,
+        "reasons": {
+          "a": {
+            "seedId": "w_1004",
+            "seedTitle": "A Wizard of Earthsea",
+            "sameAuthor": false,
+            "tags": [
+              "fantasy",
+              "literary-fiction"
+            ],
+            "text": "Closest to your pick A Wizard of Earthsea; shared shelves: fantasy, literary-fiction.",
+            "source": "Catalogue metadata."
+          },
+          "b": {
+            "seedId": "w_2004",
+            "seedTitle": "Murder on the Orient Express",
+            "sameAuthor": false,
+            "tags": [
+              "mystery",
+              "detective"
+            ],
+            "text": "Closest to your pick Murder on the Orient Express; shared shelves: mystery, detective.",
+            "source": "Catalogue metadata."
+          }
+        },
+        "position": {
+          "x": -0.33283329010009766,
+          "y": 0.733331561088562
+        }
+      },
+      {
+        "rank": 5,
+        "book": {
+          "id": "w_3013",
+          "title": "Something Wicked This Way Comes",
+          "author": "Ray Bradbury",
+          "year": null,
+          "coverUrl": null,
+          "tags": [
+            "dark",
+            "fantasy",
+            "coming-of-age",
+            "classics",
+            "gothic"
+          ]
+        },
+        "score": 0.2947,
+        "fitA": 0.6409,
+        "fitB": 0.2947,
+        "reasons": {
+          "a": {
+            "seedId": "w_1003",
+            "seedTitle": "The Hobbit",
+            "sameAuthor": false,
+            "tags": [
+              "fantasy",
+              "coming-of-age",
+              "classics"
+            ],
+            "text": "Closest to your pick The Hobbit; shared shelves: fantasy, coming-of-age, classics.",
+            "source": "Catalogue metadata."
+          },
+          "b": {
+            "seedId": "w_2003",
+            "seedTitle": "Rebecca",
+            "sameAuthor": false,
+            "tags": [
+              "classics",
+              "gothic"
+            ],
+            "text": "Closest to your pick Rebecca; shared shelves: classics, gothic.",
+            "source": "Catalogue metadata."
+          }
+        },
+        "position": {
+          "x": 0.46314704418182373,
+          "y": 0.05093410238623619
+        }
+      }
+    ],
+    "galaxy": {
+      "a": [
+        {
+          "id": "w_1001",
+          "title": "Mistborn: The Final Empire",
+          "x": 0.9228635430335999,
+          "y": -0.3846580684185028
+        },
+        {
+          "id": "w_1002",
+          "title": "The Name of the Wind",
+          "x": 0.9702120423316956,
+          "y": 0.27751535177230835
+        },
+        {
+          "id": "w_1003",
+          "title": "The Hobbit",
+          "x": 0.7506654262542725,
+          "y": 0.06078687682747841
+        },
+        {
+          "id": "w_1004",
+          "title": "A Wizard of Earthsea",
+          "x": 0.6423629522323608,
+          "y": 0.6216686964035034
+        },
+        {
+          "id": "w_1005",
+          "title": "The Magicians",
+          "x": 0.6498668789863586,
+          "y": -0.13152749836444855
+        }
+      ],
+      "b": [
+        {
+          "id": "w_2001",
+          "title": "Gone Girl",
+          "x": -0.8198006749153137,
+          "y": -1
+        },
+        {
+          "id": "w_2002",
+          "title": "The Girl on the Train",
+          "x": -0.8140493035316467,
+          "y": -0.7544475793838501
+        },
+        {
+          "id": "w_2003",
+          "title": "Rebecca",
+          "x": -0.4173993766307831,
+          "y": 0.538452684879303
+        },
+        {
+          "id": "w_2004",
+          "title": "Murder on the Orient Express",
+          "x": -0.71279376745224,
+          "y": 0.14712172746658325
+        },
+        {
+          "id": "w_2005",
+          "title": "Sharp Objects",
+          "x": -0.718233585357666,
+          "y": -0.38355591893196106
+        }
+      ],
+      "bridges": [
+        {
+          "id": "w_3002",
+          "title": "Neverwhere",
+          "x": 0.08160259574651718,
+          "y": -0.4368273615837097
+        },
+        {
+          "id": "w_3010",
+          "title": "The Eyre Affair",
+          "x": -0.27676117420196533,
+          "y": 0.5223343372344971
+        },
+        {
+          "id": "w_3014",
+          "title": "Mr. Penumbra's 24-Hour Bookstore",
+          "x": -0.18319353461265564,
+          "y": 0.22644785046577454
+        },
+        {
+          "id": "w_3004",
+          "title": "The City & the City",
+          "x": -0.33283329010009766,
+          "y": 0.733331561088562
+        },
+        {
+          "id": "w_3013",
+          "title": "Something Wicked This Way Comes",
+          "x": 0.46314704418182373,
+          "y": 0.05093410238623619
+        }
+      ]
+    }
+  },
+  "feedback": {
+    "ok": true
+  },
+  "limits": [
+    "Node client integration only; A/B screens are not connected to the API yet.",
+    "Sample shelf vectors only; no trained model or evaluation evidence.",
+    "Docker daemon unavailable during this review; native uv service tested."
+  ]
+}

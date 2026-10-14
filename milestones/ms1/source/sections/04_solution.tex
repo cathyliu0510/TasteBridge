@@ -1,0 +1,26 @@
+\section*{Solution Direction}
+
+From each reader's five favorites we build a ``taste'' vector out of the books' item embeddings, and choose as bridge books those nearest to both readers under a model-specific similarity, comparing simple baselines with a hybrid model to justify the gap it fills:
+\begin{itemize}
+  \item \textbf{Baselines:} B0 popularity; B1 item-kNN, which ranks nearest neighbours by (e.g., cosine) similarity on the user--item interaction matrix and suits small inputs like five books; B2 ALS/BPR, mature models in the Python \path{implicit} library with GPU support.
+  \item \textbf{Hybrid (M1):} matrix-factorization item factors plus content features from the metadata files (e.g., authors, sentence embeddings of descriptions), as a LightFM-style cold-start fold-in~\cite{kula2015} or a two-tower network; we hypothesize that metadata helps find shared factors even from five books per reader.
+\end{itemize}
+The galaxy places each reader at the center of their five favorite ``stars,'' with bridge books between them, via a 2-D/3-D UMAP projection of the embeddings. Explanations fill templates with facts retrieved from a vector database (RAG); an LLM may only rephrase those facts (stretch goal), and no chatbot is involved.
+
+\runin{Computation and technology stack.} GPUs can accelerate training (Table~\ref{tab:compute_req}). The stack comprises uv, Docker and Docker Compose (environment), DVC (data versioning), GCP Vertex AI jobs and pipelines (training and orchestration), Weights \& Biases (experiment tracking), FastAPI with Pydantic (backend/API), Cloud Run and Kubernetes (deployment), GitHub Actions (CI/CD), and Google Colab (exploration), with Claude optionally rephrasing recommendation reasons via RAG.
+
+\begin{table}[H]
+\centering\tablestyle
+\begin{tabularx}{\linewidth}{@{}YL{4.1cm}L{5.3cm}L{3.9cm}@{}}
+\toprule
+\textbf{Workload} & \textbf{Scale} & \textbf{Hardware} & \textbf{Est.\ time} \\
+\midrule
+Filtering + cross-genre merging ($\approx$80M interactions) & $\sim$2--4\,GB compressed & Cloud VM / Vertex AI; CPU, 16--32\,GB RAM & $\sim$1\,h \\
+ALS/BPR on a subset (e.g., 500k interactions) & 5k works (smoke test; may grow) & CPU & $<$2\,h \\
+Description / sentence embeddings & 5k descriptions (smoke test) & CPU or T4; A100 if fine-tuning & $\sim$20\,min \\
+Hybrid / PyTorch model training & 5k items (smoke test) & T4 GPU (Colab or Vertex AI) & $\sim$10\,min/epoch, $\sim$50 epochs \\
+\bottomrule
+\end{tabularx}
+\caption{Computation requirements.}
+\label{tab:compute_req}
+\end{table}

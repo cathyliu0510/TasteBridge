@@ -1,0 +1,39 @@
+% ================================================================
+% Scope and Preliminary Design  (answers AC215 MS1 Step 4)
+% Needs only packages already in the preamble: tikz (arrows.meta),
+% booktabs, graphicx, float, xcolor (dvipsnames), amssymb
+% ================================================================
+\section*{Scope and Preliminary Design}
+
+TasteBridge serves pairs of readers who each give
+$5$ favorite books, using a fixed catalogue of up to $5000$ fantasy and mystery works from the UCSD Goodreads datasets~\cite{wan2018,wan2019}. It is anonymous and has no accounts. Groups of 3--5 are a stretch goal.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Objective} & \textbf{Success looks like} \\
+\midrule
+1. Recommend from five books per reader & Beats simple baselines on held-out likes \\
+2. Suit both readers, not just one       & Better for the less-satisfied reader in simulated pairs \\
+3. Explain each pick to each reader      & Both readers would read $\geq 60\%$ of picks (user study) \\
+4. Deploy a reproducible app             & Under 0.5\,s per request; one-command rebuild \\
+\bottomrule
+\end{tabular}
+\caption{Objectives and success criteria.}
+\label{tab:objectives}
+\end{table}
+
+The project covers three minimum components: large data (tens of millions of
+Goodreads interactions), a complex model that learns from ratings and book
+content and combines two readers fairly, and scalability through Kubernetes
+autoscaling. We chose methods we already understand (implicit-feedback matrix
+factorization~\cite{hu2008}, hybrid models for new users~\cite{kula2015}, the
+least-misery rule from group recommendation~\cite{dara2020} and
+UMAP~\cite{mcinnes2018}), so our new learning can focus on AC215's MLOps tools.
+It is also fun to build: we can test it on each other and our friends, and the
+galaxy gives us room for a playful front end.
+% If the Figma version is attached, add: "A higher-fidelity Figma version of
+% screens 3--4 is attached."
+

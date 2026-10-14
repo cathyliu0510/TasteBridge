@@ -1,0 +1,16 @@
+\section*{Evaluation and Success Criteria}
+Goodreads records no joint book choices, so we use an offline \emph{pair simulation} and a small user study (targets in Table~\ref{tab:objectives}).
+
+{\tablestyle
+\begin{xltabular}{\linewidth}{@{}L{2.0cm}Y@{}}
+\toprule
+\textbf{Component} & \textbf{Design} \\
+\midrule
+Simulation & Users split 80/10/10\% (train item representations / tune / test); each test reader has $\geq$15 likes (rating $\geq$4): five build the profile, the rest are hidden. \\
+Pairs & Similar- and different-taste pairs are defined from genre metadata, without using model outputs. \\
+Metrics & Primary \textbf{Min-Recall@10} (lower of the two readers' Recall@10); secondary mean NDCG@10, long-tail coverage; supplementary Both-Hit@10 (hidden likes may not overlap). \\
+Comparisons & B0--B2 vs.\ M1; average vs.\ least-misery aggregation; both vs.\ merged-seed and popularity baselines. \\
+Robustness & Vary input from one to five favorites; analyze divergent pairs, obscure seed books, and series errors. \\
+User study & 12--20 volunteer pairs review blinded lists for joint acceptance, decision time and explanation usefulness; no identifying information collected. \\
+\bottomrule
+\end{xltabular}}

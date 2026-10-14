@@ -1,0 +1,156 @@
+time="2026-10-12T18:33:18-04:00" level=warning msg="buildx Docker CLI plugin not found: falling back to the classic builder. BuildKit-only build features (multi-arch, secrets, ssh, additional contexts, ...) will not be available"
+ Image tastebridge-review-check-backend Building 
+ Image tastebridge-review-check-backend Building 
+Sending build context to Docker daemon  44.22kB
+
+Step 1/14 : FROM python:3.12-slim-bookworm
+ ---> 782412e85d0f
+Step 2/14 : COPY --from=ghcr.io/astral-sh/uv:0.12.19 /uv /uvx /bin/
+ ---> Using cache
+ ---> 2ba599f0ce8f
+Step 3/14 : ENV PYTHONUNBUFFERED=1     UV_COMPILE_BYTECODE=1     UV_LINK_MODE=copy     UV_NO_CACHE=1     PATH="/app/.venv/bin:$PATH"     PORT=9000
+ ---> Using cache
+ ---> 1257f871551a
+Step 4/14 : RUN useradd --create-home --uid 1000 app
+ ---> Using cache
+ ---> f8ec5d17ce12
+Step 5/14 : WORKDIR /app
+ ---> Using cache
+ ---> 1e259f5d77ba
+Step 6/14 : COPY pyproject.toml uv.lock .python-version ./
+ ---> Using cache
+ ---> db51ba801551
+Step 7/14 : RUN uv sync --frozen --no-dev --no-install-project
+ ---> Using cache
+ ---> b83456cb3968
+Step 8/14 : COPY app ./app
+ ---> e47d8edadaf7
+Step 9/14 : COPY sample_artifacts ./sample_artifacts
+ ---> e64b81b601bb
+Step 10/14 : RUN mkdir -p /app/feedback && chown app:app /app/feedback
+ ---> Running in f57225083064
+ ---> Removed intermediate container f57225083064
+ ---> 02d8c0bf36b2
+Step 11/14 : USER app
+ ---> Running in b109d1149c43
+ ---> Removed intermediate container b109d1149c43
+ ---> f0d7dd6ce98c
+Step 12/14 : EXPOSE 9000
+ ---> Running in 4571e5d3625a
+ ---> Removed intermediate container 4571e5d3625a
+ ---> c00198b8c3d1
+Step 13/14 : CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+ ---> Running in c2e0739b5efe
+ ---> Removed intermediate container c2e0739b5efe
+ ---> 6872f4cbb18e
+Step 14/14 : LABEL com.docker.compose.image.builder=classic
+ ---> Running in c262b3b7f302
+ ---> Removed intermediate container c262b3b7f302
+ ---> 4c02a6d93c28
+Successfully built 4c02a6d93c28
+Successfully tagged tastebridge-review-check-backend:latest
+ Image tastebridge-review-check-backend Built 
+ Image tastebridge-review-check-backend Built 
+ Image tastebridge-review-check-frontend Building 
+ Image tastebridge-review-check-frontend Building 
+Sending build context to Docker daemon  550.4kB
+Sending build context to Docker daemon  6.778MB
+
+Step 1/9 : FROM node:24-alpine
+ ---> ebfe2f904627
+Step 2/9 : WORKDIR /app
+ ---> Using cache
+ ---> bd069c543650
+Step 3/9 : COPY . .
+ ---> aeb2323b7ee0
+Step 4/9 : RUN node scripts/build-prototype.mjs
+ ---> Running in 18c99ac9fcc9
+Built A, B, and the project scope page from editable source.
+ ---> Removed intermediate container 18c99ac9fcc9
+ ---> bd412946b50f
+Step 5/9 : USER node
+ ---> Running in 8e114666e8f7
+ ---> Removed intermediate container 8e114666e8f7
+ ---> 0b76daa98914
+Step 6/9 : ENV HOST=0.0.0.0 PORT=8080 API_BASE_URL=http://backend:9000
+ ---> Running in ff3764c7bee4
+ ---> Removed intermediate container ff3764c7bee4
+ ---> bb450bb06312
+Step 7/9 : EXPOSE 8080
+ ---> Running in 29e0effb390d
+ ---> Removed intermediate container 29e0effb390d
+ ---> 1af6d4835887
+Step 8/9 : CMD ["node", "scripts/serve.mjs"]
+ ---> Running in 6a42b20833fb
+ ---> Removed intermediate container 6a42b20833fb
+ ---> 478113b760a2
+Step 9/9 : LABEL com.docker.compose.image.builder=classic
+ ---> Running in d784b8df50d0
+ ---> Removed intermediate container d784b8df50d0
+ ---> cd70e3d9cbdf
+Successfully built cd70e3d9cbdf
+Successfully tagged tastebridge-review-check-frontend:latest
+ Image tastebridge-review-check-frontend Built 
+ Image tastebridge-review-check-frontend Built 
+ Network tastebridge-review-check_default Creating 
+ Volume tastebridge-review-check_feedback Creating 
+ Volume tastebridge-review-check_feedback Creating 
+ Network tastebridge-review-check_default Creating 
+ Volume tastebridge-review-check_feedback Created 
+ Volume tastebridge-review-check_feedback Created 
+ Network tastebridge-review-check_default Created 
+ Network tastebridge-review-check_default Created 
+ Container tastebridge-review-check-backend-1 Creating 
+ Container tastebridge-review-check-backend-1 Created 
+ Container tastebridge-review-check-frontend-1 Creating 
+ Container tastebridge-review-check-frontend-1 Created 
+ Container tastebridge-review-check-backend-1 Starting 
+ Container tastebridge-review-check-backend-1 Started 
+ Container tastebridge-review-check-backend-1 Waiting 
+ Container tastebridge-review-check-backend-1 Healthy 
+ Container tastebridge-review-check-frontend-1 Starting 
+ Container tastebridge-review-check-frontend-1 Started 
+ Container tastebridge-review-check-backend-1 Waiting 
+ Container tastebridge-review-check-frontend-1 Waiting 
+ Container tastebridge-review-check-backend-1 Healthy 
+ Container tastebridge-review-check-frontend-1 Healthy 
+backend-1   | INFO:     Started server process [1]
+backend-1   | INFO:     Waiting for application startup.
+backend-1   | 2026-10-12 22:33:29,082 INFO tastebridge Loaded model sample-shelf-toy-v1 with 52 books from /app/sample_artifacts
+backend-1   | INFO:     Application startup complete.
+backend-1   | INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
+backend-1   | 2026-10-12 22:33:33,721 INFO tastebridge.requests GET /health 200 1.9ms
+frontend-1  | TasteBridge frontend ready on port 8080
+frontend-1  | GET /healthz 200 5ms
+frontend-1  | GET /healthz 200 2ms
+frontend-1  | GET /healthz 200 1ms
+frontend-1  | GET /healthz 200 1ms
+frontend-1  | GET /api/health 200 19ms
+backend-1   | INFO:     127.0.0.1:41768 - "GET /health HTTP/1.1" 200 OK
+backend-1   | 2026-10-12 22:33:38,904 INFO tastebridge.requests GET /health 200 2.5ms
+backend-1   | INFO:     127.0.0.1:41780 - "GET /health HTTP/1.1" 200 OK
+backend-1   | 2026-10-12 22:33:44,074 INFO tastebridge.requests GET /health 200 5.0ms
+backend-1   | INFO:     127.0.0.1:38544 - "GET /health HTTP/1.1" 200 OK
+backend-1   | 2026-10-12 22:33:49,317 INFO tastebridge.requests GET /health 200 7.8ms
+backend-1   | INFO:     127.0.0.1:38562 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.3:43276 - "GET /health HTTP/1.1" 200 OK
+backend-1   | 2026-10-12 22:33:50,671 INFO tastebridge.requests GET /health 200 0.8ms
+frontend-1  | POST /api/recommend 200 27ms
+frontend-1  | GET /healthz 200 0ms
+frontend-1  | GET /healthz 200 0ms
+backend-1   | INFO:     172.19.0.3:43276 - "POST /recommend HTTP/1.1" 200 OK
+backend-1   | 2026-10-12 22:33:50,696 INFO tastebridge.requests POST /recommend 200 17.0ms
+backend-1   | 2026-10-12 22:33:54,607 INFO tastebridge.requests GET /health 200 2.5ms
+backend-1   | INFO:     127.0.0.1:41034 - "GET /health HTTP/1.1" 200 OK
+backend-1   | 2026-10-12 22:33:59,832 INFO tastebridge.requests GET /health 200 0.9ms
+backend-1   | INFO:     127.0.0.1:41046 - "GET /health HTTP/1.1" 200 OK
+ Container tastebridge-review-check-frontend-1 Stopping 
+ Container tastebridge-review-check-frontend-1 Stopped 
+ Container tastebridge-review-check-frontend-1 Removing 
+ Container tastebridge-review-check-frontend-1 Removed 
+ Container tastebridge-review-check-backend-1 Stopping 
+ Container tastebridge-review-check-backend-1 Stopped 
+ Container tastebridge-review-check-backend-1 Removing 
+ Container tastebridge-review-check-backend-1 Removed 
+ Network tastebridge-review-check_default Removing 
+ Network tastebridge-review-check_default Removed 

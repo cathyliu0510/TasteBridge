@@ -1,0 +1,61 @@
+{
+  "checkedAt": "2026-10-12T20:19:12.391344+00:00",
+  "frontendRelease": "20261012.1",
+  "frontendBaseCommit": "132b6b12cc8772dcb46dec43dcfcf7f940da7f39",
+  "backendCommit": "a9f1620dc2ea3070c600f7cca5128805cc8b74a0",
+  "frontendTests": {
+    "passed": 39,
+    "failed": 0
+  },
+  "routesVerified": 4,
+  "services": [
+    {
+      "Service": "backend",
+      "State": "running",
+      "Health": "healthy",
+      "Image": "tastebridge-preview-backend",
+      "Ports": "9000/tcp"
+    },
+    {
+      "Service": "frontend",
+      "State": "running",
+      "Health": "healthy",
+      "Image": "tastebridge-preview-frontend",
+      "Ports": "127.0.0.1:4176->8080/tcp"
+    }
+  ],
+  "model": {
+    "modelVersion": "sample-shelf-toy-v1",
+    "dataVersion": "hand-curated-sample-52",
+    "numBooks": 52,
+    "trained": false
+  },
+  "servedABundleMatchesSourceBuild": true,
+  "BUnchanged": true,
+  "desktopBrowserFlow": "manual 5+5 search/selection, separate reasons, joint confirmation, explicit feedback, both rankings and 15 stars",
+  "recovery": "backend stopped/restored; both 5/5 profiles and previous five results retained; requested ranking succeeded on retry",
+  "emptyFixture": "temporary first five toy-artifact rows; both readers selected those five, yielding no candidates",
+  "phoneWidthsChecked": [
+    390,
+    320
+  ],
+  "horizontalOverflow": false,
+  "projectNavigationPreservesApiSelections": true,
+  "offlineAWorking": true,
+  "limits": [
+    "This is a local app skeleton with toy artifacts, not the complete MS2 data/training pipeline.",
+    "Public Site remains the independently hosted frontend demo."
+  ],
+  "artifactSha256": {
+    "empty-results.jpg": "405e89f9a5eb86addc9ac6c24bc1c395e4be2ec79c7ad516f385f7166ecb64f0",
+    "desktop.jpg": "dd635676bcc6fe46ff542e3788c49edda8776092580865ac65c522d717613b39",
+    "api-check.json": "97f73f85f38aba9142979cb5d166fe22c06f35e358062afe16cfe51d75779769",
+    "api-unavailable.jpg": "41aeb75a4f1ad7269d4af29370073a690a2b857749afafd15b2eba640051011d",
+    "phone.jpg": "3b7669dced2d90801e3c01fb7147902b50efed71c5a272b9ec682d91f354ab7e"
+  },
+  "bundlesSha256": {
+    "frontend/prototype/dist/a/index.html": "842359cc6294e8f55714bd89442ea511248e5676e28b6c843b92851cc7efbfc7",
+    "frontend/prototype/dist/b/index.html": "08d15d720b2b70474e2ac3826f28bb5d2c0553950c426c3d663bb8ad68b7892c",
+    "frontend/prototype/dist/project/index.html": "21f34bf415f31cb7958a0ead356a4b99aee37f64c63b33d36504753f40de6076"
+  }
+}

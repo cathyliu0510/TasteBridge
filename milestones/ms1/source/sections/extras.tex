@@ -1,0 +1,16 @@
+\runin{Source and description.} The \href{https://cseweb.ucsd.edu/~jmcauley/datasets/goodreads.html}{UCSD Goodreads Book Graph}~\cite{wan2018, wan2019}, collected from public shelves in late 2017, offers the genre subsets below as public gzip-compressed JSON downloads (counts before filtering; the subsets overlap, so they cannot be summed as unique totals).
+
+\begin{center}\vspace{-4pt}\tablestyle
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+Subset & Books & Interactions & Downloads \\
+\midrule
+Fantasy \& Paranormal & 258,585 & 55,397,550 & \href{https://mcauleylab.ucsd.edu/public_datasets/gdrive/goodreads/byGenre/goodreads_books_fantasy_paranormal.json.gz}{Metadata} / \href{https://mcauleylab.ucsd.edu/public_datasets/gdrive/goodreads/byGenre/goodreads_interactions_fantasy_paranormal.json.gz}{Interactions} \\
+Mystery, Thriller \& Crime & 219,235 & 24,799,896 & \href{https://mcauleylab.ucsd.edu/public_datasets/gdrive/goodreads/byGenre/goodreads_books_mystery_thriller_crime.json.gz}{Metadata} / \href{https://mcauleylab.ucsd.edu/public_datasets/gdrive/goodreads/byGenre/goodreads_interactions_mystery_thriller_crime.json.gz}{Interactions} \\
+\bottomrule
+\end{tabular}\vspace{-4pt}
+\end{center}
+
+\runin{Key attributes and relevance.} Interactions (\path{user_id}, \path{book_id}, \path{rating}, \path{is_read}) support collaborative training, while titles, authors, descriptions and shelf tags supply content features and explanation evidence; files join on \path{book_id}. For the MVP, each reader chooses five favorites from a catalogue of at most 5,000 distinct works, and training uses at most 500,000 historical interactions (actual retained counts reported after filtering).
+
+\runin{Quality concerns.} We will remove cross-genre duplicates, group editions by \path{work_id} before evaluation, and flag missing descriptions and noisy shelf tags; older data and popularity bias may limit coverage, and since the files contain individual histories, simulated-pair scores cannot establish real joint acceptance. The dataset is limited to academic use, with no redistribution or commercial use.

@@ -1,0 +1,78 @@
+{
+  "title": "TasteBridge: Finding the Book Two Readers Will Both Love",
+  "snapshot_captured_at": "2026-10-04 America/New_York",
+  "team_source_rechecked_at": "2026-10-08 America/New_York",
+  "source": "YiTong Li proposal shared in the AC215 WhatsApp group on 2026-09-29 at 16:13; Cathy identified it as the preferred version at 16:20.",
+  "overleaf_project_url": "https://www.overleaf.com/project/6abc1b077277c387ee33c194",
+  "overleaf_project_title": "AC215 Proposal Shorten Length (3 pages)",
+  "status": "Team-preferred final MS1 proposal snapshot. Canvas submission receipt not verified.",
+  "live_overleaf_check": "Not completed on 2026-10-08: access through an authorized account is required. This archive is the saved 2026-10-04 snapshot.",
+  "pdf_pages": 3,
+  "original_source_zip_sha256": "cc66588620bed361a0984968c852f4decc4d162ef93a832f6e12090fb3bc4e10",
+  "files": {
+    "proposal.pdf": {
+      "bytes": 193677,
+      "sha256": "635c535f430bdad275ffd42ddc24f63a93b62c70fc19472f0fa2fa577aa77cb5"
+    },
+    "source/figures/mockup_wireframes.tex": {
+      "bytes": 6264,
+      "sha256": "1c454ec60f4f1e3db426697d010e13ab328009b6539704c1bbe163fc099e75ed"
+    },
+    "source/images/H_SEAS_logo_1color.png": {
+      "bytes": 6696,
+      "sha256": "17e785db128c7443f321853d04c77711fdcca1434e275140e952fd02905b2a9a"
+    },
+    "source/main.tex": {
+      "bytes": 1424,
+      "sha256": "6086ec5af4892d34740b36165155e3363a2c7f5c495376d334bd9861d2acdf8d"
+    },
+    "source/preamble.tex": {
+      "bytes": 2619,
+      "sha256": "28b0ba2abcc872156540c1ab18a10b1089fb18eaf3e2d2d20e3caf45bd570daf"
+    },
+    "source/references.bib": {
+      "bytes": 2973,
+      "sha256": "f6464e9fa988a11f7cbe1b9ac48516e4151077a2a24d667c8a8e42daad56da25"
+    },
+    "source/sections/01_background.tex": {
+      "bytes": 2092,
+      "sha256": "2ddbe9668f1f54178359090278aa7bd43aabf511a252001636ac10bd92ac43e0"
+    },
+    "source/sections/02_problem.tex": {
+      "bytes": 226,
+      "sha256": "77f34f17fff6eb3a9a1db898430f4d50a80a6bc521931f03c1c456daa9b62e79"
+    },
+    "source/sections/03_data.tex": {
+      "bytes": 2245,
+      "sha256": "d080b2936dc23f306995f4780dbd3791e7d5a3f7dca91b37edb780e3c9704b3c"
+    },
+    "source/sections/04_solution.tex": {
+      "bytes": 2534,
+      "sha256": "a00fa55dc9794928d4388368c62b561e30cdadffffc0054a84c0f711122f8bf3"
+    },
+    "source/sections/05_scope.tex": {
+      "bytes": 2005,
+      "sha256": "ee3d738fb9b3a46354b1ef9515ad3047ffe98bbf9da469e3fbc9ca45cbc53b6e"
+    },
+    "source/sections/06_mockup.tex": {
+      "bytes": 6955,
+      "sha256": "82953f4ef5dc25b04a57e3081be78dc494076927fe702e4343cafa2e28e0c3f6"
+    },
+    "source/sections/07_evaluation.tex": {
+      "bytes": 1216,
+      "sha256": "34173bb56cc0608366a8e4a5dcddc7314be76725f46ea53c19ce3d010a76cd7e"
+    },
+    "source/sections/08_risks.tex": {
+      "bytes": 1138,
+      "sha256": "973bb8a799d71136d5e2d5001922c53cb9971c20e79e382ba6a03cb231b30fc6"
+    },
+    "source/sections/09_milestones.tex": {
+      "bytes": 799,
+      "sha256": "acea6eef59847e8fd67fd68378893ee7cc85782cabde057ba3608274e36d95d1"
+    },
+    "source/sections/extras.tex": {
+      "bytes": 2099,
+      "sha256": "6ceee680f282c0cef9b78afb5ca24e46e543bf1e507c046dfe53c623043ec9e8"
+    }
+  }
+}

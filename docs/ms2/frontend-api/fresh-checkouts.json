@@ -1,0 +1,74 @@
+{
+  "checkedAt": "2026-10-12T22:33:50.668959+00:00",
+  "purpose": "Fresh separate-branch checkout review of sample-data application; not the complete MS2 pipeline",
+  "frontend": {
+    "branch": "prototype/ms1-scope-and-website",
+    "commit": "45ec77561a6e8edeea7443e412426b883ffb051c"
+  },
+  "backend": {
+    "branch": "feature/backend",
+    "commit": "a9f1620dc2ea3070c600f7cca5128805cc8b74a0"
+  },
+  "command": "TASTEBRIDGE_BACKEND_DIR=../TasteBridge-backend/src/backend TASTEBRIDGE_UI_PORT=4186 docker-compose -p tastebridge-review-check -f compose.integration.yml up --build --wait",
+  "composeProject": "tastebridge-review-check",
+  "uiPort": 4186,
+  "frontendHealth": {
+    "status": "ok",
+    "service": "frontend"
+  },
+  "apiHealth": {
+    "status": "ok",
+    "model_version": "sample-shelf-toy-v1",
+    "num_books": 52
+  },
+  "sampleRequest": {
+    "reader_a": [
+      "w_1001",
+      "w_1002",
+      "w_1003",
+      "w_1004",
+      "w_1005"
+    ],
+    "reader_b": [
+      "w_2001",
+      "w_2002",
+      "w_2003",
+      "w_2004",
+      "w_2005"
+    ],
+    "k": 5,
+    "aggregation": "least_misery"
+  },
+  "assertions": {
+    "freshRemoteClones": true,
+    "fiveRecommendations": true,
+    "fifteenGalaxyPoints": true,
+    "sampleModelOnly": true,
+    "noFeedbackRequests": true
+  },
+  "sha256": {
+    "TasteBridge/compose.integration.yml": "a68945a77a0b89f2b4345d3bd5e1666bc31e82c4b7de472405d582ed8c8ae387",
+    "TasteBridge/frontend/prototype/dist/a/index.html": "3c60eb22b7806f18e4692187bb32ffce91d5334864bd9554d61d9ce1ba366e67",
+    "TasteBridge-backend/src/backend/sample_artifacts/books.json": "422ccd64617ab4eb25f9c495b70565b4beef7fbe063de1df96cda63682d48cd6",
+    "TasteBridge-backend/src/backend/sample_artifacts/item_embeddings.npy": "70d462cac76bca856585684f3bbfa0c730a95a0df84db2edaed5d4e2563ec64a",
+    "TasteBridge-backend/src/backend/sample_artifacts/coords_2d.npy": "a36fe362f59619c26e842912ba7b33309416b5d17d740dd49f5ebdc25f892ca4",
+    "TasteBridge-backend/src/backend/sample_artifacts/meta.json": "02213e208e2326a824ad89cbd9801a5ae9f041e15486193c0e494bebb56a7493"
+  },
+  "cleanup": {
+    "existing4176Preserved": true,
+    "existing4176Health": {
+      "status": "ok",
+      "model_version": "sample-shelf-toy-v1",
+      "num_books": 52
+    },
+    "feedbackPostMade": false,
+    "temporaryComposeContainersRemoved": true,
+    "temporaryFeedbackVolume": "Retained by normal docker-compose down; no feedback events were written."
+  },
+  "responseSummary": {
+    "recommendations": 5,
+    "galaxyPoints": 15,
+    "aggregation": "least_misery",
+    "model_version": "sample-shelf-toy-v1"
+  }
+}

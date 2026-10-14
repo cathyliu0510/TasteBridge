@@ -1,0 +1,2 @@
+dist/** linguist-generated=true -whitespace
+src/**/fonts/*-OFL.txt -whitespace
