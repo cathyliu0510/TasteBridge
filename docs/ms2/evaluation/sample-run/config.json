@@ -1,0 +1,61 @@
+{
+  "run_id": "ms2-synthetic-demo",
+  "package_version": "0.1.0",
+  "git_commit": "0e48af9779994cdcc9f15b23ff8e4a33a65d1901",
+  "python": "3.12.3",
+  "arguments": {
+    "interactions": null,
+    "books": null,
+    "synthetic": true,
+    "out": "results",
+    "run_id": "ms2-synthetic-demo",
+    "split": "test",
+    "models": [
+      "popularity",
+      "item_knn"
+    ],
+    "aggregations": [
+      "average",
+      "least_misery",
+      "merged_seeds"
+    ],
+    "favorite_counts": [
+      5,
+      4,
+      3,
+      2,
+      1
+    ],
+    "n_pairs": 300,
+    "k": 10,
+    "knn_neighbors": 100,
+    "seed": 42
+  },
+  "data": {
+    "interactions": {
+      "path": "results/ms2-synthetic-demo/input/interactions.csv",
+      "sha256": "4a9cd20ea616bd9257e38857dbc035c0b44213af7591f4a21739ae4aaaf29ad7"
+    },
+    "books": {
+      "path": "results/ms2-synthetic-demo/input/books.csv",
+      "sha256": "2e4036999c8bb44320c0dc95431a2bf06675c701fc8747e2963fdfd29abc5a83"
+    }
+  },
+  "counts": {
+    "interactions": 44845,
+    "train_interactions": 35702,
+    "users": {
+      "train": 800,
+      "tune": 100,
+      "test": 100
+    },
+    "catalogue_works": 600,
+    "long_tail_works": 480,
+    "eligible_readers": 100,
+    "pairs": {
+      "similar": 150,
+      "different": 150
+    }
+  },
+  "seconds": 1.82
+}

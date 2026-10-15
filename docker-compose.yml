@@ -16,5 +16,18 @@ services:
       timeout: 5s
       retries: 3
 
+  # Offline evaluation (Min-Recall@10, NDCG@10, coverage). Runs once and exits.
+  #   mkdir -p src/evaluation/results
+  #   docker compose --profile evaluation run --rm evaluation
+  # Defaults to synthetic data; see src/evaluation/README.md for real data.
+  evaluation:
+    build: ./src/evaluation
+    profiles: ["evaluation"]
+    environment:
+      GIT_COMMIT: ${GIT_COMMIT:-}
+    volumes:
+      - ./src/evaluation/results:/app/results
+      - ./src/evaluation/data:/app/data:ro
+
 volumes:
   feedback:

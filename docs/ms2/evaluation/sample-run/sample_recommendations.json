@@ -1,0 +1,290 @@
+[
+  {
+    "model": "item_knn",
+    "aggregation": "average",
+    "pair_kind": "similar",
+    "input": {
+      "reader_a_favorites": [
+        "Synthetic Work 533",
+        "Synthetic Work 42",
+        "Synthetic Work 258",
+        "Synthetic Work 438",
+        "Synthetic Work 433"
+      ],
+      "reader_b_favorites": [
+        "Synthetic Work 9",
+        "Synthetic Work 527",
+        "Synthetic Work 156",
+        "Synthetic Work 99",
+        "Synthetic Work 375"
+      ]
+    },
+    "output": [
+      {
+        "rank": 1,
+        "work_id": "w0386",
+        "title": "Synthetic Work 386",
+        "hidden_like_of": [
+          "a",
+          "b"
+        ]
+      },
+      {
+        "rank": 2,
+        "work_id": "w0302",
+        "title": "Synthetic Work 302",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 3,
+        "work_id": "w0409",
+        "title": "Synthetic Work 409",
+        "hidden_like_of": [
+          "a",
+          "b"
+        ]
+      },
+      {
+        "rank": 4,
+        "work_id": "w0356",
+        "title": "Synthetic Work 356",
+        "hidden_like_of": [
+          "a"
+        ]
+      },
+      {
+        "rank": 5,
+        "work_id": "w0321",
+        "title": "Synthetic Work 321",
+        "hidden_like_of": [
+          "b"
+        ]
+      },
+      {
+        "rank": 6,
+        "work_id": "w0407",
+        "title": "Synthetic Work 407",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 7,
+        "work_id": "w0119",
+        "title": "Synthetic Work 119",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 8,
+        "work_id": "w0389",
+        "title": "Synthetic Work 389",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 9,
+        "work_id": "w0017",
+        "title": "Synthetic Work 17",
+        "hidden_like_of": [
+          "b"
+        ]
+      },
+      {
+        "rank": 10,
+        "work_id": "w0428",
+        "title": "Synthetic Work 428",
+        "hidden_like_of": []
+      }
+    ]
+  },
+  {
+    "model": "item_knn",
+    "aggregation": "average",
+    "pair_kind": "similar",
+    "input": {
+      "reader_a_favorites": [
+        "Synthetic Work 533",
+        "Synthetic Work 42",
+        "Synthetic Work 258",
+        "Synthetic Work 438",
+        "Synthetic Work 433"
+      ],
+      "reader_b_favorites": [
+        "Synthetic Work 86",
+        "Synthetic Work 438",
+        "Synthetic Work 428",
+        "Synthetic Work 32",
+        "Synthetic Work 277"
+      ]
+    },
+    "output": [
+      {
+        "rank": 1,
+        "work_id": "w0409",
+        "title": "Synthetic Work 409",
+        "hidden_like_of": [
+          "a",
+          "b"
+        ]
+      },
+      {
+        "rank": 2,
+        "work_id": "w0321",
+        "title": "Synthetic Work 321",
+        "hidden_like_of": [
+          "b"
+        ]
+      },
+      {
+        "rank": 3,
+        "work_id": "w0356",
+        "title": "Synthetic Work 356",
+        "hidden_like_of": [
+          "a",
+          "b"
+        ]
+      },
+      {
+        "rank": 4,
+        "work_id": "w0119",
+        "title": "Synthetic Work 119",
+        "hidden_like_of": [
+          "b"
+        ]
+      },
+      {
+        "rank": 5,
+        "work_id": "w0407",
+        "title": "Synthetic Work 407",
+        "hidden_like_of": [
+          "b"
+        ]
+      },
+      {
+        "rank": 6,
+        "work_id": "w0500",
+        "title": "Synthetic Work 500",
+        "hidden_like_of": [
+          "a"
+        ]
+      },
+      {
+        "rank": 7,
+        "work_id": "w0430",
+        "title": "Synthetic Work 430",
+        "hidden_like_of": [
+          "a",
+          "b"
+        ]
+      },
+      {
+        "rank": 8,
+        "work_id": "w0232",
+        "title": "Synthetic Work 232",
+        "hidden_like_of": [
+          "a"
+        ]
+      },
+      {
+        "rank": 9,
+        "work_id": "w0417",
+        "title": "Synthetic Work 417",
+        "hidden_like_of": [
+          "b"
+        ]
+      },
+      {
+        "rank": 10,
+        "work_id": "w0386",
+        "title": "Synthetic Work 386",
+        "hidden_like_of": [
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "model": "item_knn",
+    "aggregation": "average",
+    "pair_kind": "similar",
+    "input": {
+      "reader_a_favorites": [
+        "Synthetic Work 346",
+        "Synthetic Work 460",
+        "Synthetic Work 333",
+        "Synthetic Work 318",
+        "Synthetic Work 130"
+      ],
+      "reader_b_favorites": [
+        "Synthetic Work 130",
+        "Synthetic Work 446",
+        "Synthetic Work 208",
+        "Synthetic Work 585",
+        "Synthetic Work 397"
+      ]
+    },
+    "output": [
+      {
+        "rank": 1,
+        "work_id": "w0031",
+        "title": "Synthetic Work 31",
+        "hidden_like_of": [
+          "b"
+        ]
+      },
+      {
+        "rank": 2,
+        "work_id": "w0526",
+        "title": "Synthetic Work 526",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 3,
+        "work_id": "w0194",
+        "title": "Synthetic Work 194",
+        "hidden_like_of": [
+          "b"
+        ]
+      },
+      {
+        "rank": 4,
+        "work_id": "w0192",
+        "title": "Synthetic Work 192",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 5,
+        "work_id": "w0233",
+        "title": "Synthetic Work 233",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 6,
+        "work_id": "w0214",
+        "title": "Synthetic Work 214",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 7,
+        "work_id": "w0092",
+        "title": "Synthetic Work 92",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 8,
+        "work_id": "w0024",
+        "title": "Synthetic Work 24",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 9,
+        "work_id": "w0432",
+        "title": "Synthetic Work 432",
+        "hidden_like_of": []
+      },
+      {
+        "rank": 10,
+        "work_id": "w0118",
+        "title": "Synthetic Work 118",
+        "hidden_like_of": []
+      }
+    ]
+  }
+]
