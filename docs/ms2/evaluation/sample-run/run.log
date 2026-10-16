@@ -1,0 +1,15 @@
+2026-10-14T08:53:16 INFO TasteBridge evaluation 0.1.0, run ms2-synthetic-demo
+2026-10-14T08:53:17 INFO Generated synthetic input in results/ms2-synthetic-demo/input
+2026-10-14T08:53:17 INFO Loaded 44845 interactions from 1000 users; 600 books
+2026-10-14T08:53:17 INFO User split train/tune/test = 800/100/100
+2026-10-14T08:53:17 INFO 100 test readers have >=15 likes in the 600-work catalogue
+2026-10-14T08:53:17 INFO Sampled 300 pairs {'similar': 150, 'different': 150}
+2026-10-14T08:53:17 INFO Fitted popularity on 35702 training interactions in 0.00s
+2026-10-14T08:53:17 INFO Fitted item_knn on 35702 training interactions in 0.02s
+2026-10-14T08:53:18 INFO popularity average      Min-Recall@10 0.0326  NDCG@10 0.1666  long-tail cov 0.0000
+2026-10-14T08:53:18 INFO popularity least_misery Min-Recall@10 0.0326  NDCG@10 0.1666  long-tail cov 0.0000
+2026-10-14T08:53:18 INFO popularity merged_seeds Min-Recall@10 0.0326  NDCG@10 0.1666  long-tail cov 0.0000
+2026-10-14T08:53:18 INFO item_knn   average      Min-Recall@10 0.0643  NDCG@10 0.3054  long-tail cov 0.3312
+2026-10-14T08:53:18 INFO item_knn   least_misery Min-Recall@10 0.0388  NDCG@10 0.2140  long-tail cov 0.7562
+2026-10-14T08:53:18 INFO item_knn   merged_seeds Min-Recall@10 0.0556  NDCG@10 0.3079  long-tail cov 0.3312
+2026-10-14T08:53:18 INFO Wrote results to results/ms2-synthetic-demo in 1.8s

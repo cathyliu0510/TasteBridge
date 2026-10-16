@@ -1,0 +1,28 @@
+[project]
+name = "tastebridge-evaluation"
+version = "0.1.0"
+description = "TasteBridge offline pair-simulation evaluation: Min-Recall@10, NDCG@10, long-tail coverage."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=2.5.4",
+    "pandas>=3.0.6",
+    "pyarrow>=26.0.0",
+    "scipy>=1.18.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["evaluation"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+]
