@@ -10,7 +10,7 @@ All data used here is **synthetic** (8 invented books); no Goodreads data is in 
 | `src/datapipeline/preprocess/quality.py` | `add_quality_flags(books)` for Cathy's preprocess: cleans descriptions and shelf tags, adds `has_description` and `description_issue`, returns a summary for `manifest.json["quality"]` |
 | `src/datapipeline/embed/` | The embed stage (own `pyproject.toml`, `uv.lock`, `Dockerfile`, tests): `books.parquet` → 384-number vector per book → ChromaDB index + retrieval examples |
 | `docker-compose.yml` | New `embed` service, **opt-in** via the `pipeline` profile (see below); the backend service is unchanged |
-| `.dvc/`, `.dvcignore`, `.gitignore` | DVC initialised with remote `gs://tastebridge-dvc`; everything under `data/` is ignored by git except `*.dvc` tickets |
+| `.dvc/`, `.dvcignore`, `.gitignore` | DVC initialised with remote `gs://tastebridge-dvc`; git ignores `data/raw/`, `data/interim/`, `data/processed/`, `data/embeddings/` by name, so the `data/*.dvc` tickets stay visible to both git and DVC |
 | `docs/ms2/embed/` | MS2 evidence from the synthetic run (`retrieval_example.md`, `run.log`, `meta.json`) |
 
 How to run and test it: `src/datapipeline/embed/README.md`.
@@ -37,7 +37,8 @@ How to run and test it: `src/datapipeline/embed/README.md`.
 ## Known limitations (not fixed, by decision)
 
 - **Evidence is synthetic.** `docs/ms2/embed/` was produced from the 8 invented books. Regenerate it from Cathy's preprocess sample before submission.
-- **DVC is configured, not used yet.** The bucket `gs://tastebridge-dvc` must exist first (Cathy). `dvc add data/embeddings` and `dvc push` have not been run.
+- **DVC is configured and rehearsed, not pushed yet.** The bucket `gs://tastebridge-dvc` exists and is private. The full cycle (`dvc add` → `dvc push` → delete → `dvc pull`) was rehearsed against a local test remote, and the files came back byte-identical. The first real `dvc push` waits for (a) Google credentials on the pusher's machine and (b) the real preprocess sample. Setup: `gcloud auth application-default login`, then `dvc add data/processed data/embeddings`, `git add data/*.dvc`, `dvc push`.
+- **DVC + `.gitignore` gotcha (fixed).** The first version used `/data/*` with `!/data/*.dvc` exceptions. Git accepted it, but DVC then saw no tracked data, and `dvc push` printed "Everything is up to date" while uploading nothing. Keep each data folder listed by name, and add a new line for any new folder under `data/`.
 - **No `depends_on` on preprocess.** `embed` doesn't wait for preprocess yet, because there's no preprocess service in compose. A commented `depends_on` block is ready to enable.
 - **Image size is about 3 GB.** It's verified CPU-only torch (`2.x+cpu`) plus the baked model. Slimming it (e.g. ONNX) is deferred.
 - **Windows file locks.** On Windows, keep `embed.query` and notebooks closed while re-running embed, because Chroma holds its files open. The run stops cleanly if you forget.
