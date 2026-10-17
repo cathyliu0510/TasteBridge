@@ -43,6 +43,21 @@ INGEST_SAMPLE_LINES=200000 docker compose --profile pipeline run --rm embed   # 
 
 Plain `docker compose up --build` still starts only the backend, as before.
 
+## Real-data run (Oct 16, full files)
+
+| | Sample (`make data`, 200k lines/file) | Full (`INGEST_SAMPLE_LINES=0 make data`) |
+|---|---|---|
+| Interaction lines read | 400,000 | **80,197,446** |
+| Editions → works | 470,776 → 208,416 | 470,776 → 208,416 |
+| Catalogue works | 5,000 | 5,000 |
+| Users kept | 2,407 | **9,896** (of 709,000 touching the catalogue) |
+| Interactions kept (likes) | 128,153 (88,388) | **499,915 (349,962)** |
+| Users with ≥15 likes | 1,544 | 6,114 |
+| `data_version` | `gr-80911e8f118a` | **`gr-317756d1a1ad`** |
+| Preprocess time (MacBook, Docker) | ~1.5 min | ~6 min |
+
+Running the same input on two machines gave the same `data_version` (`gr-db9936ca43ed` on the synthetic demo data), so the stage is reproducible.
+
 ## Stage 1: ingest (`src/datapipeline/ingest/`)
 
 Downloads five files from `https://mcauleylab.ucsd.edu/public_datasets/gdrive/goodreads/`:

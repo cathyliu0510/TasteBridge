@@ -45,12 +45,12 @@ from evaluation.data import likes
 class ALSParams:
     """Key hyperparameters (recorded in config.json and the artifact meta.json)."""
 
-    # Defaults chosen on synthetic data (see docs/ms2/models/README.md): with sparse
-    # works (few likes), 64 factors + weak regularisation overfit and the unit-length
-    # vectors of rare works crowd the cosine ranking. Re-tune on --split tune with
-    # real data (next iteration).
-    factors: int = 32          # vector length per reader / work
-    regularization: float = 10.0
+    # Chosen on the TUNE split of the full Goodreads data (gr-317756d1a1ad), 18 settings,
+    # see docs/ms2/models/README.md: Min-Recall@10 rises with factors (16 -> 128) and
+    # peaks at regularisation ~50; 128 factors matches 256 (0.0424 vs 0.0427) at a
+    # third of the training time.
+    factors: int = 128         # vector length per reader / work
+    regularization: float = 50.0
     alpha: float = 20.0        # extra confidence on liked pairs
     iterations: int = 15
     seed: int = 42
